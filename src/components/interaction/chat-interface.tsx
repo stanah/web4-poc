@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MessageBubble, type Message } from "./message-bubble";
+import { MessageBubble } from "./message-bubble";
 import type { DemoAgent } from "@/lib/agents/seed-data";
 
 interface ChatInterfaceProps {
@@ -14,18 +16,17 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ agent }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "agent",
-      content: `Hello! I'm **${agent.name}**. ${agent.description.split(".")[0]}. How can I help you?`,
-      timestamp: new Date().toISOString(),
-      agentName: agent.name,
-    },
-  ]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/interact",
+      body: { agentId: agent.id },
+    }),
+  });
+
+  const isLoading = status === "streaming" || status === "submitted";
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -33,59 +34,16 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
     }
   }, [messages]);
 
-  const sendMessage = async () => {
+  const handleSend = () => {
     if (!input.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: input.trim(),
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    sendMessage({ text: input.trim() });
     setInput("");
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/interact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId: agent.id, message: userMessage.content }),
-      });
-
-      const data = await response.json();
-
-      const agentMessage: Message = {
-        id: `agent-${Date.now()}`,
-        role: "agent",
-        content: data.response,
-        timestamp: data.timestamp,
-        confidence: data.confidence,
-        agentName: agent.name,
-      };
-
-      setMessages((prev) => [...prev, agentMessage]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          role: "agent",
-          content: "Sorry, I encountered an error. Please try again.",
-          timestamp: new Date().toISOString(),
-          agentName: agent.name,
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSend();
     }
   };
 
@@ -117,10 +75,24 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
       <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-4">
+            {messages.length === 0 && (
+              <MessageBubble
+                role="assistant"
+                agentName={agent.name}
+                content={`Hello! I'm **${agent.name}**. ${agent.description.split(".")[0]}. How can I help you?`}
+              />
+            )}
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+              <MessageBubble
+                key={msg.id}
+                role={msg.role}
+                agentName={msg.role === "assistant" ? agent.name : undefined}
+                content={msg.parts
+                  .map((part) => (part.type === "text" ? part.text : ""))
+                  .join("")}
+              />
             ))}
-            {isLoading && (
+            {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start">
                 <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
                   <div className="flex gap-1">
@@ -149,7 +121,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
               onKeyDown={handleKeyDown}
               disabled={isLoading}
             />
-            <Button onClick={sendMessage} disabled={!input.trim() || isLoading}>
+            <Button onClick={handleSend} disabled={!input.trim() || isLoading}>
               Send
             </Button>
           </div>

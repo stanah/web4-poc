@@ -37,6 +37,9 @@ export default function HomePage() {
           <Button asChild variant="outline" size="lg">
             <Link href="/register">Register Agent</Link>
           </Button>
+          <Button asChild variant="secondary" size="lg">
+            <Link href="/dashboard">Watch AI Agents Trade</Link>
+          </Button>
         </div>
       </motion.section>
 

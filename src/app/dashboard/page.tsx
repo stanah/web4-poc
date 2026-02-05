@@ -1,10 +1,18 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { ActivityFeed, type ActivityEvent } from "@/components/dashboard/activity-feed";
 import { EconomyStats } from "@/components/dashboard/economy-stats";
+import { SimulationPanel } from "@/components/dashboard/simulation-panel";
 
 export default function DashboardPage() {
+  const [simEvents, setSimEvents] = useState<ActivityEvent[]>([]);
+
+  const handleSimActivity = useCallback((event: ActivityEvent) => {
+    setSimEvents((prev) => [event, ...prev].slice(0, 30));
+  }, []);
+
   return (
     <div className="space-y-8">
       <motion.div
@@ -19,8 +27,9 @@ export default function DashboardPage() {
 
       <EconomyStats />
 
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-        <ActivityFeed />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SimulationPanel onActivityEvent={handleSimActivity} />
+        <ActivityFeed externalEvents={simEvents} />
       </div>
     </div>
   );

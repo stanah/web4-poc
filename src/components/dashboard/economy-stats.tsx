@@ -3,41 +3,70 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useTotalAgents } from "@/lib/contracts/hooks/use-identity";
+import { useReputationSummary } from "@/lib/contracts/hooks/use-reputation";
+import { DEMO_AGENTS } from "@/lib/agents/seed-data";
 
-const stats = [
-  {
-    label: "Total Agents",
-    value: "3",
-    subtitle: "+3 this week",
-    color: "text-green-500",
-  },
-  {
-    label: "Total Feedback",
-    value: "107",
-    subtitle: "+23 today",
-    color: "text-blue-500",
-  },
-  {
-    label: "Avg. Rating",
-    value: "4.47",
-    subtitle: "across all agents",
-    color: "text-yellow-500",
-  },
-  {
-    label: "Interactions",
-    value: "342",
-    subtitle: "+87 today",
-    color: "text-purple-500",
-  },
-];
+function useEconomyData() {
+  const { data: totalSupply } = useTotalAgents();
+  const { data: summary1 } = useReputationSummary(1);
+  const { data: summary2 } = useReputationSummary(2);
+  const { data: summary3 } = useReputationSummary(3);
 
-const agentRankings = [
-  { name: "AnalystAgent", score: 4.7, feedbacks: 28, percentage: 94 },
-  { name: "TranslateAgent", score: 4.5, feedbacks: 32, percentage: 90 },
-  { name: "OracleBot", score: 4.2, feedbacks: 47, percentage: 84 },
-];
+  const onChainTotal = totalSupply ? Number(totalSupply) : 0;
+
+  const summaries = [summary1, summary2, summary3]
+    .filter(Boolean)
+    .map((s) => {
+      const sum = s as { totalFeedback: bigint; averageValue: bigint; averageDecimals: number };
+      return {
+        totalFeedback: Number(sum.totalFeedback),
+        averageScore: Number(sum.averageValue) / Math.pow(10, sum.averageDecimals),
+      };
+    });
+
+  const hasOnChainData = summaries.length > 0 && summaries.some((s) => s.totalFeedback > 0);
+
+  if (hasOnChainData) {
+    const totalFeedback = summaries.reduce((acc, s) => acc + s.totalFeedback, 0);
+    const avgRating =
+      summaries.reduce((acc, s) => acc + s.averageScore, 0) / summaries.length;
+    return {
+      totalAgents: onChainTotal || summaries.length,
+      totalFeedback,
+      avgRating,
+      rankings: DEMO_AGENTS.map((agent, i) => ({
+        name: agent.name,
+        score: summaries[i]?.averageScore ?? agent.averageScore,
+        feedbacks: summaries[i]?.totalFeedback ?? agent.feedbackCount,
+        percentage: Math.round(((summaries[i]?.averageScore ?? agent.averageScore) / 5) * 100),
+      })).sort((a, b) => b.score - a.score),
+    };
+  }
+
+  // Fallback to seed data
+  return {
+    totalAgents: 3,
+    totalFeedback: 107,
+    avgRating: 4.47,
+    rankings: [
+      { name: "AnalystAgent", score: 4.7, feedbacks: 28, percentage: 94 },
+      { name: "TranslateAgent", score: 4.5, feedbacks: 32, percentage: 90 },
+      { name: "OracleBot", score: 4.2, feedbacks: 47, percentage: 84 },
+    ],
+  };
+}
 
 export function EconomyStats() {
+  const { totalAgents, totalFeedback, avgRating, rankings } = useEconomyData();
+
+  const stats = [
+    { label: "Total Agents", value: String(totalAgents), subtitle: "on-chain", color: "text-green-500" },
+    { label: "Total Feedback", value: String(totalFeedback), subtitle: "on-chain", color: "text-blue-500" },
+    { label: "Avg. Rating", value: avgRating.toFixed(2), subtitle: "across all agents", color: "text-yellow-500" },
+    { label: "Interactions", value: "342", subtitle: "+87 today", color: "text-purple-500" },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -69,7 +98,7 @@ export function EconomyStats() {
         <CardContent className="pt-6">
           <h3 className="font-semibold mb-4">Agent Leaderboard</h3>
           <div className="space-y-4">
-            {agentRankings.map((agent, i) => (
+            {rankings.map((agent, i) => (
               <motion.div
                 key={agent.name}
                 className="space-y-2"

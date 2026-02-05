@@ -7,19 +7,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getAgentById, DEMO_AGENTS } from "@/lib/agents/seed-data";
+import { getAgentById } from "@/lib/agents/seed-data";
 import { ReputationBadge } from "@/components/reputation/reputation-badge";
 import { FeedbackForm } from "@/components/reputation/feedback-form";
 import { FeedbackList } from "@/components/reputation/feedback-list";
+import { useReputationSummary } from "@/lib/contracts/hooks/use-reputation";
+import { useAgentTokenURI } from "@/lib/contracts/hooks/use-identity";
 
-export default function AgentProfilePage({
-  params,
-}: {
-  params: Promise<{ agentId: string }>;
-}) {
-  const { agentId } = use(params);
-  const id = parseInt(agentId, 10);
-  const agent = getAgentById(id);
+function AgentProfile({ agentId }: { agentId: number }) {
+  const seedAgent = getAgentById(agentId);
+  const { data: summary } = useReputationSummary(agentId);
+  const { data: tokenURI } = useAgentTokenURI(BigInt(agentId));
+
+  // Use on-chain reputation if available, otherwise seed data
+  const onChainScore = summary
+    ? Number((summary as { averageValue: bigint }).averageValue) /
+      Math.pow(10, (summary as { averageDecimals: number }).averageDecimals)
+    : undefined;
+  const onChainFeedbackCount = summary
+    ? Number((summary as { totalFeedback: bigint }).totalFeedback)
+    : undefined;
+
+  const agent = seedAgent;
 
   if (!agent) {
     return (
@@ -35,6 +44,9 @@ export default function AgentProfilePage({
     );
   }
 
+  const displayScore = onChainScore ?? agent.averageScore;
+  const displayFeedbackCount = onChainFeedbackCount ?? agent.feedbackCount;
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
@@ -49,7 +61,7 @@ export default function AgentProfilePage({
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">{agent.name}</h1>
-            <ReputationBadge score={agent.averageScore} />
+            <ReputationBadge score={displayScore} />
           </div>
           <p className="text-muted-foreground">{agent.description}</p>
           <div className="flex flex-wrap gap-2 mt-2">
@@ -59,6 +71,11 @@ export default function AgentProfilePage({
               </Badge>
             ))}
           </div>
+          {tokenURI && (
+            <p className="text-xs text-muted-foreground font-mono truncate max-w-md">
+              tokenURI: {tokenURI as string}
+            </p>
+          )}
         </div>
         <Button asChild>
           <Link href={`/interact/${agent.id}`}>Chat with Agent</Link>
@@ -108,14 +125,14 @@ export default function AgentProfilePage({
         <Card>
           <CardContent className="pt-6 text-center">
             <div className="text-3xl font-bold">
-              {agent.averageScore.toFixed(1)}
+              {displayScore.toFixed(1)}
             </div>
             <p className="text-sm text-muted-foreground">Average Score</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <div className="text-3xl font-bold">{agent.feedbackCount}</div>
+            <div className="text-3xl font-bold">{displayFeedbackCount}</div>
             <p className="text-sm text-muted-foreground">Total Reviews</p>
           </CardContent>
         </Card>
@@ -141,4 +158,15 @@ export default function AgentProfilePage({
       </motion.div>
     </div>
   );
+}
+
+export default function AgentProfilePage({
+  params,
+}: {
+  params: Promise<{ agentId: string }>;
+}) {
+  const { agentId } = use(params);
+  const id = parseInt(agentId, 10);
+
+  return <AgentProfile agentId={id} />;
 }

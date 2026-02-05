@@ -1,23 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
 
-export interface Message {
-  id: string;
-  role: "user" | "agent";
+interface MessageBubbleProps {
+  role: string;
   content: string;
-  timestamp: string;
-  confidence?: number;
   agentName?: string;
 }
 
-interface MessageBubbleProps {
-  message: Message;
-}
-
-export function MessageBubble({ message }: MessageBubbleProps) {
-  const isUser = message.role === "user";
+export function MessageBubble({ role, content, agentName }: MessageBubbleProps) {
+  const isUser = role === "user";
 
   return (
     <motion.div
@@ -33,24 +25,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             : "bg-muted rounded-bl-sm"
         }`}
       >
-        {!isUser && message.agentName && (
-          <div className="flex items-center gap-2 mb-1">
+        {!isUser && agentName && (
+          <div className="mb-1">
             <span className="text-xs font-medium text-primary">
-              {message.agentName}
+              {agentName}
             </span>
-            {message.confidence !== undefined && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                {(message.confidence * 100).toFixed(0)}% conf.
-              </Badge>
-            )}
           </div>
         )}
-        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-        <div
-          className={`text-[10px] mt-1 ${isUser ? "text-primary-foreground/60" : "text-muted-foreground"}`}
-        >
-          {new Date(message.timestamp).toLocaleTimeString()}
-        </div>
+        <div className="text-sm whitespace-pre-wrap">{content}</div>
       </div>
     </motion.div>
   );

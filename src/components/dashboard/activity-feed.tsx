@@ -5,125 +5,110 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useWatchContractEvent } from "wagmi";
+import { identityRegistryAbi } from "@/lib/contracts/abis/identity-registry";
+import { reputationRegistryAbi } from "@/lib/contracts/abis/reputation-registry";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 
-interface ActivityEvent {
+export interface ActivityEvent {
   id: string;
-  type: "registration" | "feedback" | "interaction" | "validation";
+  type: "registration" | "feedback" | "interaction" | "validation" | "simulation";
   agentName: string;
   description: string;
   timestamp: string;
 }
 
 const SEED_EVENTS: ActivityEvent[] = [
-  {
-    id: "1",
-    type: "registration",
-    agentName: "OracleBot",
-    description: "Registered as Agent #1",
-    timestamp: "2026-02-06T03:00:00Z",
-  },
-  {
-    id: "2",
-    type: "registration",
-    agentName: "TranslateAgent",
-    description: "Registered as Agent #2",
-    timestamp: "2026-02-06T03:01:00Z",
-  },
-  {
-    id: "3",
-    type: "registration",
-    agentName: "AnalystAgent",
-    description: "Registered as Agent #3",
-    timestamp: "2026-02-06T03:02:00Z",
-  },
-  {
-    id: "4",
-    type: "feedback",
-    agentName: "OracleBot",
-    description: "Received 5-star feedback [accuracy, speed]",
-    timestamp: "2026-02-06T03:05:00Z",
-  },
-  {
-    id: "5",
-    type: "interaction",
-    agentName: "TranslateAgent",
-    description: "Completed translation request",
-    timestamp: "2026-02-06T03:06:00Z",
-  },
-  {
-    id: "6",
-    type: "feedback",
-    agentName: "AnalystAgent",
-    description: "Received 4-star feedback [reliability]",
-    timestamp: "2026-02-06T03:07:00Z",
-  },
-  {
-    id: "7",
-    type: "validation",
-    agentName: "OracleBot",
-    description: "Validated by 0x1234...abcd",
-    timestamp: "2026-02-06T03:08:00Z",
-  },
+  { id: "1", type: "registration", agentName: "OracleBot", description: "Registered as Agent #1", timestamp: "2026-02-06T03:00:00Z" },
+  { id: "2", type: "registration", agentName: "TranslateAgent", description: "Registered as Agent #2", timestamp: "2026-02-06T03:01:00Z" },
+  { id: "3", type: "registration", agentName: "AnalystAgent", description: "Registered as Agent #3", timestamp: "2026-02-06T03:02:00Z" },
+  { id: "4", type: "feedback", agentName: "OracleBot", description: "Received 5-star feedback [accuracy, speed]", timestamp: "2026-02-06T03:05:00Z" },
+  { id: "5", type: "interaction", agentName: "TranslateAgent", description: "Completed translation request", timestamp: "2026-02-06T03:06:00Z" },
+  { id: "6", type: "feedback", agentName: "AnalystAgent", description: "Received 4-star feedback [reliability]", timestamp: "2026-02-06T03:07:00Z" },
+  { id: "7", type: "validation", agentName: "OracleBot", description: "Validated by 0x1234...abcd", timestamp: "2026-02-06T03:08:00Z" },
 ];
 
-const LIVE_EVENTS: ActivityEvent[] = [
-  {
-    id: "live-1",
-    type: "interaction",
-    agentName: "OracleBot",
-    description: "Price query: ETH/USD",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "live-2",
-    type: "feedback",
-    agentName: "TranslateAgent",
-    description: "Received 5-star feedback [helpfulness]",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "live-3",
-    type: "interaction",
-    agentName: "AnalystAgent",
-    description: "Market report generated",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "live-4",
-    type: "feedback",
-    agentName: "OracleBot",
-    description: "Received 4-star feedback [reliability, speed]",
-    timestamp: new Date().toISOString(),
-  },
-];
+const AGENT_NAMES: Record<number, string> = {
+  1: "OracleBot",
+  2: "TranslateAgent",
+  3: "AnalystAgent",
+};
 
 const typeColors: Record<ActivityEvent["type"], string> = {
   registration: "bg-green-600",
   feedback: "bg-yellow-600",
   interaction: "bg-blue-600",
   validation: "bg-purple-600",
+  simulation: "bg-cyan-600",
 };
 
-export function ActivityFeed() {
+interface ActivityFeedProps {
+  externalEvents?: ActivityEvent[];
+}
+
+export function ActivityFeed({ externalEvents }: ActivityFeedProps) {
   const [events, setEvents] = useState<ActivityEvent[]>(SEED_EVENTS);
 
+  // Merge external events (from simulation) into the feed
   useEffect(() => {
-    let index = 0;
-    const interval = setInterval(() => {
-      const event = LIVE_EVENTS[index % LIVE_EVENTS.length];
-      setEvents((prev) => [
-        {
-          ...event,
-          id: `live-${Date.now()}`,
-          timestamp: new Date().toISOString(),
-        },
-        ...prev.slice(0, 19),
-      ]);
-      index++;
-    }, 5000);
+    if (externalEvents && externalEvents.length > 0) {
+      setEvents((prev) => {
+        const newEvents = externalEvents.filter(
+          (e) => !prev.some((p) => p.id === e.id)
+        );
+        if (newEvents.length === 0) return prev;
+        return [...newEvents, ...prev].slice(0, 30);
+      });
+    }
+  }, [externalEvents]);
 
-    return () => clearInterval(interval);
-  }, []);
+  // Watch for on-chain Transfer events (agent registrations)
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESSES.sepolia.identityRegistry,
+    abi: identityRegistryAbi,
+    eventName: "Transfer",
+    onLogs(logs) {
+      for (const log of logs) {
+        const tokenId = Number(log.args.tokenId);
+        const agentName = AGENT_NAMES[tokenId] || `Agent #${tokenId}`;
+        setEvents((prev) => [
+          {
+            id: `transfer-${log.transactionHash}-${tokenId}`,
+            type: "registration",
+            agentName,
+            description: `Registered as Agent #${tokenId}`,
+            timestamp: new Date().toISOString(),
+          },
+          ...prev.slice(0, 29),
+        ]);
+      }
+    },
+  });
+
+  // Watch for on-chain FeedbackGiven events
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESSES.sepolia.reputationRegistry,
+    abi: reputationRegistryAbi,
+    eventName: "FeedbackGiven",
+    onLogs(logs) {
+      for (const log of logs) {
+        const agentId = Number(log.args.agentId);
+        const agentName = AGENT_NAMES[agentId] || `Agent #${agentId}`;
+        const value = Number(log.args.value);
+        const stars = Math.round(value / 100);
+        setEvents((prev) => [
+          {
+            id: `feedback-${log.transactionHash}-${agentId}`,
+            type: "feedback",
+            agentName,
+            description: `Received ${stars}-star feedback`,
+            timestamp: new Date().toISOString(),
+          },
+          ...prev.slice(0, 29),
+        ]);
+      }
+    },
+  });
 
   return (
     <Card>
