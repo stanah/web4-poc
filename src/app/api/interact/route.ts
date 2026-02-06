@@ -8,11 +8,20 @@ export async function POST(request: Request) {
   const { messages, agentId }: { messages: UIMessage[]; agentId: number } =
     await request.json();
 
-  const result = streamText({
-    model: getModel(),
-    system: getAgentPrompt(agentId),
-    messages: await convertToModelMessages(messages),
-  });
+  try {
+    const result = streamText({
+      model: getModel(),
+      system: getAgentPrompt(agentId),
+      messages: await convertToModelMessages(messages),
+    });
 
-  return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to generate response";
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 }

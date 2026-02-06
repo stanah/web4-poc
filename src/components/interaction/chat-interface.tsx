@@ -19,7 +19,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/interact",
       body: { agentId: agent.id },
@@ -92,6 +92,13 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
                   .join("")}
               />
             ))}
+            {error && (
+              <div className="flex justify-start">
+                <div className="bg-destructive/10 text-destructive rounded-2xl px-4 py-3 text-sm">
+                  Failed to get response. Please check that the AI API key is configured correctly.
+                </div>
+              </div>
+            )}
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start">
                 <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
