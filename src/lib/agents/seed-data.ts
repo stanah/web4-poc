@@ -1,10 +1,12 @@
 import type { AgentMetadata } from "@/lib/erc8004/types";
+import type { ModelConfig } from "@/lib/ai/provider";
 
 export interface DemoAgent extends AgentMetadata {
   id: number;
   registeredAt: string;
   feedbackCount: number;
   averageScore: number;
+  model?: ModelConfig;
 }
 
 export const DEMO_AGENTS: DemoAgent[] = [
@@ -27,6 +29,7 @@ export const DEMO_AGENTS: DemoAgent[] = [
       },
     ],
     tags: ["oracle", "defi", "price-feed"],
+    model: { provider: "openrouter", modelId: "google/gemini-2.0-flash-001" },
     registeredAt: "2026-01-30T12:00:00Z",
     feedbackCount: 47,
     averageScore: 4.2,
@@ -45,6 +48,7 @@ export const DEMO_AGENTS: DemoAgent[] = [
       },
     ],
     tags: ["translation", "nlp", "multilingual"],
+    model: { provider: "openrouter", modelId: "deepseek/deepseek-chat" },
     registeredAt: "2026-01-31T08:30:00Z",
     feedbackCount: 32,
     averageScore: 4.5,
@@ -68,6 +72,7 @@ export const DEMO_AGENTS: DemoAgent[] = [
       },
     ],
     tags: ["analytics", "defi", "research"],
+    model: { provider: "openrouter", modelId: "qwen/qwen3-235b-a22b" },
     registeredAt: "2026-02-01T15:45:00Z",
     feedbackCount: 28,
     averageScore: 4.7,

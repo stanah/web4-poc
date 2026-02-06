@@ -1,6 +1,7 @@
 import { streamText, UIMessage, convertToModelMessages } from "ai";
 import { getModel } from "@/lib/ai/provider";
 import { getAgentPrompt } from "@/lib/ai/agent-prompts";
+import { getAgentById } from "@/lib/agents/seed-data";
 
 export const maxDuration = 30;
 
@@ -9,8 +10,9 @@ export async function POST(request: Request) {
     await request.json();
 
   try {
+    const agent = getAgentById(agentId);
     const result = streamText({
-      model: getModel(),
+      model: getModel(agent?.model),
       system: getAgentPrompt(agentId),
       messages: await convertToModelMessages(messages),
     });
