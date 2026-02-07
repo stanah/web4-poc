@@ -7,12 +7,25 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const body = await request.json();
-  const { buyerAgentId, purpose } = body;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
-  if (!buyerAgentId || !purpose) {
+  const { buyerAgentId, purpose } = body as Record<string, unknown>;
+
+  if (typeof buyerAgentId !== "number" || !Number.isInteger(buyerAgentId) || buyerAgentId < 0) {
     return NextResponse.json(
-      { error: "buyerAgentId and purpose are required" },
+      { error: "buyerAgentId must be a non-negative integer" },
+      { status: 400 },
+    );
+  }
+
+  if (typeof purpose !== "string" || purpose.trim().length === 0) {
+    return NextResponse.json(
+      { error: "purpose must be a non-empty string" },
       { status: 400 },
     );
   }
@@ -29,7 +42,7 @@ export async function POST(
     );
   }
 
-  const result = purchaseArtwork(Number(id), buyerAgentId, purpose);
+  const result = purchaseArtwork(Number(id), buyerAgentId, purpose.trim());
   if (!result) {
     return NextResponse.json({ error: "Purchase failed" }, { status: 500 });
   }

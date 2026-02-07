@@ -7,6 +7,7 @@ import {
 } from "@/lib/artworks/store";
 import { getAgentById } from "@/lib/agents/seed-data";
 
+// Next.js 16: params is a Promise and must be awaited
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },

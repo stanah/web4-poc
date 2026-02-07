@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { CreationEvent } from "@/lib/artworks/creation-engine";
 
 type SimulationStatus = "idle" | "running" | "complete" | "error";
@@ -22,6 +21,7 @@ const EVENT_ICONS: Record<string, string> = {
   "creation-delta": "",
   "creation-complete": "✅",
   "music-generation-start": "🎵",
+  "music-generation-skipped": "⏭️",
   "music-generation-complete": "🎶",
   "purchase-start": "🛒",
   "purchase-complete": "💰",
@@ -37,6 +37,7 @@ const EVENT_COLORS: Record<string, string> = {
   "creation-start": "bg-purple-500/10 border-purple-500/20",
   "creation-complete": "bg-purple-500/10 border-purple-500/20",
   "music-generation-start": "bg-pink-500/10 border-pink-500/20",
+  "music-generation-skipped": "bg-yellow-500/10 border-yellow-500/20",
   "music-generation-complete": "bg-pink-500/10 border-pink-500/20",
   "purchase-start": "bg-blue-500/10 border-blue-500/20",
   "purchase-complete": "bg-green-500/10 border-green-500/20",
@@ -184,7 +185,7 @@ export function CreationSimulationPanel({ onComplete }: CreationSimulationPanelP
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0">
-        <ScrollArea className="h-[600px] p-4" ref={scrollRef}>
+        <div className="h-[600px] p-4 overflow-y-auto" ref={scrollRef}>
           {events.length === 0 && status === "idle" ? (
             <div className="flex flex-col items-center justify-center h-full py-16 text-center">
               <p className="text-4xl mb-4">🎨🔄💰</p>
@@ -223,7 +224,7 @@ export function CreationSimulationPanel({ onComplete }: CreationSimulationPanelP
               </div>
             </AnimatePresence>
           )}
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
@@ -261,7 +262,9 @@ function CreationEventMessage({ event }: { event: CreationEvent }) {
                 >
                   {detail.type === "derivative-royalty"
                     ? "ロイヤリティ (30%)"
-                    : "販売収益 (70%)"}
+                    : event.revenueDetails!.some((d) => d.type === "derivative-royalty")
+                      ? "販売収益 (70%)"
+                      : "販売収益 (100%)"}
                 </Badge>
               </div>
               <span className="font-bold text-green-500">
@@ -350,6 +353,7 @@ function CreationEventMessage({ event }: { event: CreationEvent }) {
   // Music generation events
   if (
     event.type === "music-generation-start" ||
+    event.type === "music-generation-skipped" ||
     event.type === "music-generation-complete"
   ) {
     return (

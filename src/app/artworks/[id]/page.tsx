@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { Artwork, Purchase } from "@/lib/artworks/types";
 import { ARTWORK_STYLES, LICENSE_LABELS } from "@/lib/artworks/types";
 import type { DemoAgent } from "@/lib/agents/seed-data";
+import { sanitizeSvg } from "@/lib/artworks/svg-sanitizer";
 
 interface ArtworkDetailResponse {
   artwork: Artwork;
@@ -175,7 +176,7 @@ export default function ArtworkDetailPage() {
               {artwork.style === "generative-svg" ? (
                 <div
                   className="rounded-lg overflow-hidden bg-black/90"
-                  dangerouslySetInnerHTML={{ __html: artwork.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeSvg(artwork.content) }}
                 />
               ) : artwork.style === "music" ? (
                 <div className="space-y-4">

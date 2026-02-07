@@ -84,6 +84,9 @@ export function purchaseArtwork(
   const artwork = getArtworkById(artworkId);
   if (!artwork) return null;
 
+  // Self-purchase prevention at store layer
+  if (artwork.creatorAgentId === buyerAgentId) return null;
+
   const purchase: Purchase = {
     id: nextPurchaseId++,
     artworkId,
@@ -96,7 +99,7 @@ export function purchaseArtwork(
 
   // Update artwork stats
   artwork.purchaseCount++;
-  artwork.totalRevenue += artwork.price;
+  artwork.totalRevenue += purchase.price;
 
   // Distribute revenue
   const newRevenue = distributeRevenue(artwork, purchase);
@@ -109,10 +112,13 @@ export function purchaseArtwork(
 function distributeRevenue(artwork: Artwork, purchase: Purchase): RevenueEntry[] {
   const entries: RevenueEntry[] = [];
   const isDerivative = artwork.parentArtworkId !== null;
-  const rules = isDerivative ? REVENUE_RULES.derivative : REVENUE_RULES.original;
 
-  // Creator's share
-  const creatorAmount = artwork.price * rules.creatorShare;
+  // Open-licensed derivatives don't pay royalties — treat as original split
+  const shouldPayRoyalty = isDerivative && artwork.license !== "open";
+  const rules = shouldPayRoyalty ? REVENUE_RULES.derivative : REVENUE_RULES.original;
+
+  // Creator's share (use purchase.price, not artwork.price)
+  const creatorAmount = purchase.price * rules.creatorShare;
   entries.push({
     id: nextRevenueId++,
     recipientAgentId: artwork.creatorAgentId,
@@ -123,11 +129,11 @@ function distributeRevenue(artwork: Artwork, purchase: Purchase): RevenueEntry[]
     timestamp: purchase.timestamp,
   });
 
-  // Original creator royalty (if derivative)
-  if (isDerivative && artwork.parentArtworkId !== null) {
+  // Original creator royalty (if derivative with royalty-bearing license)
+  if (shouldPayRoyalty && artwork.parentArtworkId !== null) {
     const parent = getArtworkById(artwork.parentArtworkId);
     if (parent) {
-      const royaltyAmount = artwork.price * rules.originalCreatorRoyalty;
+      const royaltyAmount = purchase.price * rules.originalCreatorRoyalty;
       entries.push({
         id: nextRevenueId++,
         recipientAgentId: parent.creatorAgentId,

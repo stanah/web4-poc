@@ -30,6 +30,7 @@ export type CreationEventType =
   | "creation-delta"
   | "creation-complete"
   | "music-generation-start"
+  | "music-generation-skipped"
   | "music-generation-complete"
   | "purchase-start"
   | "purchase-complete"
@@ -268,7 +269,7 @@ ${agent.description}
     }
   } else {
     yield {
-      type: "music-generation-start",
+      type: "music-generation-skipped",
       agentName: agent.name,
       content:
         "ACE-Stepサーバー未接続。歌詞と楽曲メタデータのみで作品を登録します。",
