@@ -100,6 +100,7 @@ export async function getOrCreatePlayer(
     headers: getHeaders(),
     body: JSON.stringify({
       name: name ?? `web4-${walletAddress.slice(0, 8)}`,
+      external_wallet: walletAddress,
     }),
   });
 

@@ -27,7 +27,7 @@ CREATE INDEX idx_agents_token_id ON agents (token_id);
 -- Feedback table: indexed from ReputationRegistry FeedbackGiven events
 CREATE TABLE IF NOT EXISTS feedback (
   id              BIGSERIAL PRIMARY KEY,
-  agent_id        INTEGER NOT NULL,
+  agent_id        INTEGER NOT NULL REFERENCES agents(token_id),
   from_address    TEXT NOT NULL,
   value           NUMERIC NOT NULL,
   decimals        INTEGER NOT NULL DEFAULT 2,
@@ -46,7 +46,7 @@ CREATE INDEX idx_feedback_timestamp ON feedback (block_timestamp);
 -- Validations table: indexed from ValidationRegistry Validated events
 CREATE TABLE IF NOT EXISTS validations (
   id               BIGSERIAL PRIMARY KEY,
-  agent_id         INTEGER NOT NULL,
+  agent_id         INTEGER NOT NULL REFERENCES agents(token_id),
   validator        TEXT NOT NULL,
   validation_type  TEXT NOT NULL DEFAULT '',
   validation_data  TEXT NOT NULL DEFAULT '',
@@ -61,7 +61,7 @@ CREATE INDEX idx_validations_validator ON validations (validator);
 
 -- Reputation summaries: materialized aggregation of feedback per agent
 CREATE TABLE IF NOT EXISTS reputation_summaries (
-  agent_id         INTEGER PRIMARY KEY,
+  agent_id         INTEGER PRIMARY KEY REFERENCES agents(token_id),
   total_feedback   INTEGER NOT NULL DEFAULT 0,
   average_score    NUMERIC NOT NULL DEFAULT 0,
   tag_counts       JSONB NOT NULL DEFAULT '{}',
@@ -119,6 +119,22 @@ BEGIN
     updated_at     = NOW();
 END;
 $$ LANGUAGE plpgsql;
+
+-- ============================================================
+-- Trigger: Auto-update updated_at on agents table
+-- ============================================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_agents_updated_at
+  BEFORE UPDATE ON agents
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
 -- RLS Policies (Row Level Security)

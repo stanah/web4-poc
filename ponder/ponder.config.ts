@@ -1,4 +1,4 @@
-import { createConfig, mergeAbis } from "@ponder/core";
+import { createConfig } from "@ponder/core";
 import { http } from "viem";
 
 import IdentityRegistryAbi from "./abis/IdentityRegistry.json";

@@ -13,11 +13,11 @@ const address = CONTRACT_ADDRESSES.sepolia.identityRegistry;
 async function getAgentsFromSupabase(tag?: string, query?: string) {
   // Dynamic import to avoid errors when Supabase is not configured
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !supabaseKey) return null;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) return null;
 
-  const { getSupabaseServerClient } = await import("@/lib/supabase/server");
-  const supabase = getSupabaseServerClient();
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(supabaseUrl, anonKey);
 
   let queryBuilder = supabase.from("agents").select("*");
 
@@ -26,9 +26,13 @@ async function getAgentsFromSupabase(tag?: string, query?: string) {
   }
 
   if (query) {
-    queryBuilder = queryBuilder.or(
-      `name.ilike.%${query}%,description.ilike.%${query}%`,
-    );
+    // Sanitize query to prevent PostgREST filter injection
+    const sanitized = query.replace(/[%_(),.]/g, "");
+    if (sanitized) {
+      queryBuilder = queryBuilder.or(
+        `name.ilike.%${sanitized}%,description.ilike.%${sanitized}%`,
+      );
+    }
   }
 
   const { data, error } = await queryBuilder.order("token_id", { ascending: true });

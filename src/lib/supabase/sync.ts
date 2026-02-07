@@ -41,17 +41,55 @@ interface PonderValidation {
 }
 
 /**
+ * Check if a URL points to a private/internal IP range (SSRF prevention).
+ */
+function isPrivateUrl(urlStr: string): boolean {
+  try {
+    const url = new URL(urlStr);
+    const hostname = url.hostname;
+    // Block private IPs, localhost, link-local, metadata endpoints
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0" ||
+      hostname === "[::1]" ||
+      hostname.startsWith("10.") ||
+      hostname.startsWith("172.") ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("169.254.") ||
+      hostname.endsWith(".local") ||
+      hostname.endsWith(".internal")
+    ) {
+      return true;
+    }
+    // Only allow HTTPS for external URLs
+    if (url.protocol !== "https:") return true;
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Parse agent metadata from a data URI or fetch from external URL.
+ * Includes SSRF protection: blocks private IPs, enforces HTTPS, adds timeout.
  */
 async function parseMetadata(uri: string): Promise<AgentMetadata | null> {
   try {
     if (uri.startsWith("data:")) {
       const json = uri.split(",")[1];
       return JSON.parse(atob(json));
-    } else if (uri.startsWith("http")) {
-      const res = await fetch(uri);
-      if (!res.ok) return null;
-      return await res.json();
+    } else if (uri.startsWith("https://")) {
+      if (isPrivateUrl(uri)) return null;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      try {
+        const res = await fetch(uri, { signal: controller.signal });
+        if (!res.ok) return null;
+        return await res.json();
+      } finally {
+        clearTimeout(timeout);
+      }
     }
   } catch {
     // Invalid metadata
@@ -83,6 +121,7 @@ export async function syncAgents(agents: PonderAgent[]): Promise<number> {
           services: metadata?.services ?? [],
           block_number: agent.blockNumber,
           tx_hash: agent.txHash,
+          updated_at: new Date().toISOString(),
         },
         { onConflict: "token_id" },
       );
@@ -109,7 +148,7 @@ export async function syncFeedback(entries: PonderFeedback[]): Promise<number> {
         {
           agent_id: entry.agentId,
           from_address: entry.from,
-          value: Number(entry.value),
+          value: entry.value,
           decimals: entry.decimals,
           tag1: bytes32ToTag(entry.tag1 as `0x${string}`),
           tag2: bytes32ToTag(entry.tag2 as `0x${string}`),
@@ -128,7 +167,10 @@ export async function syncFeedback(entries: PonderFeedback[]): Promise<number> {
 
   // Recalculate reputation summaries for affected agents
   for (const agentId of affectedAgents) {
-    await supabase.rpc("upsert_reputation_summary", { p_agent_id: agentId });
+    const { error: rpcError } = await supabase.rpc("upsert_reputation_summary", { p_agent_id: agentId });
+    if (rpcError) {
+      console.error(`[sync] Failed to update reputation summary for agent ${agentId}:`, rpcError);
+    }
   }
 
   return synced;

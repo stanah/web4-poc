@@ -10,11 +10,18 @@ import { syncAgents, syncFeedback, syncValidations } from "@/lib/supabase/sync";
  * Body: { type: "agents" | "feedback" | "validations", data: [...] }
  */
 export async function POST(request: Request) {
-  // Verify webhook secret
-  const authHeader = request.headers.get("authorization");
+  // Fail closed: reject if webhook secret is not configured
   const expectedToken = process.env.INDEXER_WEBHOOK_SECRET;
+  if (!expectedToken) {
+    console.error("[indexer/sync] INDEXER_WEBHOOK_SECRET is not configured");
+    return NextResponse.json(
+      { error: "Webhook secret not configured" },
+      { status: 500 },
+    );
+  }
 
-  if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

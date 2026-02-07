@@ -45,7 +45,7 @@ export interface FeedbackRow {
   id: number;
   agent_id: number;
   from_address: string;
-  value: number;
+  value: string; // NUMERIC returned as string by PostgREST to preserve int256 precision
   decimals: number;
   tag1: string;
   tag2: string;
@@ -58,7 +58,7 @@ export interface FeedbackRow {
 export interface FeedbackInsert {
   agent_id: number;
   from_address: string;
-  value: number;
+  value: string; // NUMERIC - use string to preserve int256 precision
   decimals: number;
   tag1: string;
   tag2: string;
@@ -92,7 +92,7 @@ export interface ValidationInsert {
 export interface ReputationSummaryRow {
   agent_id: number;
   total_feedback: number;
-  average_score: number;
+  average_score: string; // NUMERIC returned as string by PostgREST
   tag_counts: Record<string, number>;
   last_feedback_at: string | null;
   updated_at: string;

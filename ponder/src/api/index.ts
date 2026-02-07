@@ -1,6 +1,6 @@
 import { ponder } from "@/generated";
 import { agent, feedbackEntry, validation } from "../../ponder.schema";
-import { desc, eq, like, sql } from "@ponder/core";
+import { desc, eq, sql } from "@ponder/core";
 
 /**
  * Ponder GraphQL API is auto-generated.
@@ -9,14 +9,7 @@ import { desc, eq, like, sql } from "@ponder/core";
 
 // GET /api/agents - List all indexed agents
 ponder.get("/api/agents", async (c) => {
-  const tag = c.req.query("tag");
-  const query = c.req.query("q");
-
-  let results = await c.db.select().from(agent).orderBy(desc(agent.tokenId));
-
-  // Note: tag/query filtering on metadata requires metadata to be parsed.
-  // For now return all agents - metadata filtering is done in the Next.js API.
-
+  const results = await c.db.select().from(agent).orderBy(desc(agent.tokenId));
   return c.json({ agents: results, total: results.length });
 });
 
@@ -60,17 +53,17 @@ ponder.get("/api/feedback/:agentId/summary", async (c) => {
   const results = await c.db
     .select({
       totalFeedback: sql<number>`count(*)`,
-      averageValue: sql<number>`coalesce(avg(${feedbackEntry.value}), 0)`,
+      averageScore: sql<number>`coalesce(avg(${feedbackEntry.value} / power(10, ${feedbackEntry.decimals})), 0)`,
     })
     .from(feedbackEntry)
     .where(eq(feedbackEntry.agentId, agentId));
 
-  const summary = results[0] ?? { totalFeedback: 0, averageValue: 0 };
+  const summary = results[0] ?? { totalFeedback: 0, averageScore: 0 };
 
   return c.json({
     agentId,
     totalFeedback: Number(summary.totalFeedback),
-    averageScore: Number(summary.averageValue) / 100, // Assuming 2 decimals
+    averageScore: Number(summary.averageScore),
   });
 });
 

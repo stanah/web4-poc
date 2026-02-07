@@ -5,6 +5,7 @@ import { getOrCreatePlayer } from "@/lib/openfort/server";
  * POST /api/openfort/player
  *
  * Create or retrieve an Openfort player (smart account) for a wallet address.
+ * Requires a valid Ethereum address format as proof of intent.
  * Body: { walletAddress: string }
  */
 export async function POST(request: Request) {
@@ -14,6 +15,14 @@ export async function POST(request: Request) {
     if (!walletAddress || typeof walletAddress !== "string") {
       return NextResponse.json(
         { error: "walletAddress is required" },
+        { status: 400 },
+      );
+    }
+
+    // Validate Ethereum address format
+    if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+      return NextResponse.json(
+        { error: "Invalid Ethereum address format" },
         { status: 400 },
       );
     }

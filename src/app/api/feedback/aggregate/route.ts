@@ -3,16 +3,19 @@ import { getPublicClient } from "@/lib/contracts/server-client";
 import { reputationRegistryAbi } from "@/lib/contracts/abis/reputation-registry";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 
+const MAX_CONCURRENT_RPC = 10;
+
 /**
  * Try to read reputation summaries from Supabase first.
+ * Uses anon key (RLS enforced) for read-only access.
  */
 async function getFromSupabase(agentId?: number) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !supabaseKey) return null;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) return null;
 
-  const { getSupabaseServerClient } = await import("@/lib/supabase/server");
-  const supabase = getSupabaseServerClient();
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(supabaseUrl, anonKey);
 
   if (agentId) {
     const { data, error } = await supabase
@@ -82,9 +85,39 @@ async function getOnChainSummary(agentId: number) {
   };
 }
 
+/**
+ * Run promises with concurrency limit to prevent RPC rate limit exhaustion.
+ */
+async function withConcurrencyLimit<T>(
+  tasks: (() => Promise<T>)[],
+  limit: number,
+): Promise<T[]> {
+  const results: T[] = [];
+  for (let i = 0; i < tasks.length; i += limit) {
+    const batch = tasks.slice(i, i + limit);
+    const batchResults = await Promise.allSettled(batch.map((fn) => fn()));
+    for (const r of batchResults) {
+      if (r.status === "fulfilled") results.push(r.value);
+    }
+  }
+  return results;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const agentIdParam = searchParams.get("agentId");
+
+  // Validate agentId if provided
+  if (agentIdParam !== null) {
+    const parsed = parseInt(agentIdParam, 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      return NextResponse.json(
+        { error: "agentId must be a positive integer" },
+        { status: 400 },
+      );
+    }
+  }
+
   const agentId = agentIdParam ? parseInt(agentIdParam, 10) : undefined;
 
   // Try Supabase first
@@ -104,31 +137,27 @@ export async function GET(request: Request) {
       return NextResponse.json(data);
     }
 
-    // Get all agents from on-chain totalSupply
-    const { getPublicClient: getClient } = await import(
-      "@/lib/contracts/server-client"
-    );
-    const { identityRegistryAbi: idAbi } = await import(
-      "@/lib/contracts/abis/identity-registry"
-    );
-    const client = getClient();
+    // Get all agents from on-chain totalSupply with concurrency limit
+    const client = getPublicClient();
     const totalSupply = (await client.readContract({
       address: CONTRACT_ADDRESSES.sepolia.identityRegistry,
-      abi: idAbi,
+      abi: (await import("@/lib/contracts/abis/identity-registry")).identityRegistryAbi,
       functionName: "totalSupply",
     })) as bigint;
 
-    const count = Number(totalSupply);
+    const count = Math.min(Number(totalSupply), 100); // Cap at 100 to prevent DoS
     const results: Record<number, Awaited<ReturnType<typeof getOnChainSummary>>> = {};
-    await Promise.all(
-      Array.from({ length: count }, (_, i) => i + 1).map(async (id) => {
-        try {
-          results[id] = await getOnChainSummary(id);
-        } catch {
-          // Skip agents with no feedback
-        }
-      }),
-    );
+
+    const tasks = Array.from({ length: count }, (_, i) => {
+      const id = i + 1;
+      return async () => {
+        const summary = await getOnChainSummary(id);
+        results[id] = summary;
+        return summary;
+      };
+    });
+
+    await withConcurrencyLimit(tasks, MAX_CONCURRENT_RPC);
     return NextResponse.json(results);
   } catch (err) {
     console.error("[feedback/aggregate] Error:", err);
