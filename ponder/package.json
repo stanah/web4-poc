@@ -1,0 +1,20 @@
+{
+  "name": "web4-poc-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "ponder dev",
+    "start": "ponder start",
+    "codegen": "ponder codegen"
+  },
+  "dependencies": {
+    "@ponder/core": "^0.8.0",
+    "@supabase/supabase-js": "^2.95.3",
+    "hono": "^4.0.0",
+    "viem": "^2.45.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
