@@ -81,7 +81,7 @@ export async function getOrCreatePlayer(
 ): Promise<{ id: string; smartAccountAddress: string }> {
   // Search for existing player by external wallet
   const searchRes = await fetch(
-    `${OPENFORT_API_BASE}/v1/players?external_wallet=${walletAddress}`,
+    `${OPENFORT_API_BASE}/v1/players?external_wallet=${encodeURIComponent(walletAddress)}`,
     { headers: getHeaders(), signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
   );
 

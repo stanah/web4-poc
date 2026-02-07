@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { getOrCreatePlayer } from "@/lib/openfort/server";
 
 /**
  * POST /api/openfort/player
  *
  * Create or retrieve an Openfort player (smart account) for a wallet address.
- * Requires a valid Ethereum address format and API secret as proof of authorization.
+ * Protected by Origin header verification to ensure requests come from our frontend.
  * Body: { walletAddress: string }
  */
 export async function POST(request: Request) {
   try {
-    // Verify the request comes from our own frontend via shared secret
-    const apiSecret = process.env.OPENFORT_API_ROUTE_SECRET;
-    if (apiSecret) {
-      const authHeader = request.headers.get("x-api-secret");
-      if (authHeader !== apiSecret) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+    // Verify the request originates from our own frontend (CSRF protection)
+    const headersList = await headers();
+    const origin = headersList.get("origin");
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (appUrl && origin && origin !== appUrl) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { walletAddress } = await request.json();

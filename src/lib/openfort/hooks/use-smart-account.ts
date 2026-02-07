@@ -37,12 +37,17 @@ export function useSmartAccount() {
     }
   }, [address]);
 
+  // Track the current address at call time to detect stale responses
+  const currentAddressRef = useRef(address);
+  currentAddressRef.current = address;
+
   const initSmartAccount = useCallback(async () => {
     if (!address) {
       setState((s) => ({ ...s, error: "Wallet not connected" }));
       return;
     }
 
+    const calledWithAddress = address;
     setState((s) => ({ ...s, isLoading: true, error: null }));
 
     try {
@@ -51,6 +56,9 @@ export function useSmartAccount() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ walletAddress: address }),
       });
+
+      // Guard against stale response if address changed during fetch
+      if (currentAddressRef.current !== calledWithAddress) return;
 
       if (!res.ok) {
         throw new Error(`Failed to create smart account: ${res.status}`);
@@ -65,6 +73,7 @@ export function useSmartAccount() {
         error: null,
       });
     } catch (err) {
+      if (currentAddressRef.current !== calledWithAddress) return;
       setState((s) => ({
         ...s,
         isLoading: false,

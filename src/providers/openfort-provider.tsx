@@ -54,12 +54,17 @@ export function OpenfortProvider({ children }: { children: ReactNode }) {
     }
   }, [address]);
 
+  // Track the current address at call time to detect stale responses
+  const currentAddressRef = useRef(address);
+  currentAddressRef.current = address;
+
   const initSmartAccount = useCallback(async () => {
     if (!address) {
       setError("Wallet not connected");
       return;
     }
 
+    const calledWithAddress = address;
     setIsInitializing(true);
     setError(null);
 
@@ -70,6 +75,9 @@ export function OpenfortProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ walletAddress: address }),
       });
 
+      // Guard against stale response if address changed during fetch
+      if (currentAddressRef.current !== calledWithAddress) return;
+
       if (!res.ok) {
         throw new Error(`Failed to init smart account: ${res.status}`);
       }
@@ -78,6 +86,7 @@ export function OpenfortProvider({ children }: { children: ReactNode }) {
       setPlayerId(data.playerId);
       setSmartAccountAddress(data.smartAccountAddress);
     } catch (err) {
+      if (currentAddressRef.current !== calledWithAddress) return;
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsInitializing(false);

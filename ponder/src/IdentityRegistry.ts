@@ -21,8 +21,8 @@ ponder.on("IdentityRegistry:Transfer", async ({ event, context }) => {
         args: [tokenId],
       });
       metadataUri = uri as string;
-    } catch {
-      // tokenURI may not be set yet
+    } catch (err) {
+      console.warn(`[IdentityRegistry] Failed to read tokenURI for token ${tokenId}:`, err);
     }
 
     await context.db
