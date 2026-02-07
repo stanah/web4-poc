@@ -177,6 +177,57 @@ export default function ArtworkDetailPage() {
                   className="rounded-lg overflow-hidden bg-black/90"
                   dangerouslySetInnerHTML={{ __html: artwork.content }}
                 />
+              ) : artwork.style === "music" ? (
+                <div className="space-y-4">
+                  {/* Music metadata */}
+                  {artwork.musicMetadata && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="rounded-lg bg-muted/50 p-3 text-center">
+                        <p className="text-xs text-muted-foreground">Genre</p>
+                        <p className="font-medium text-sm">{artwork.musicMetadata.genre}</p>
+                      </div>
+                      <div className="rounded-lg bg-muted/50 p-3 text-center">
+                        <p className="text-xs text-muted-foreground">BPM</p>
+                        <p className="font-medium text-sm">{artwork.musicMetadata.bpm}</p>
+                      </div>
+                      <div className="rounded-lg bg-muted/50 p-3 text-center">
+                        <p className="text-xs text-muted-foreground">Key</p>
+                        <p className="font-medium text-sm">{artwork.musicMetadata.key}</p>
+                      </div>
+                      <div className="rounded-lg bg-muted/50 p-3 text-center">
+                        <p className="text-xs text-muted-foreground">Duration</p>
+                        <p className="font-medium text-sm">{artwork.musicMetadata.duration}s</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Audio player */}
+                  {artwork.musicMetadata?.audioUrl ? (
+                    <div className="rounded-lg border p-4 bg-muted/30">
+                      <p className="text-xs text-muted-foreground mb-2">ACE-Step 1.5 Generated Audio</p>
+                      <audio
+                        controls
+                        className="w-full"
+                        src={artwork.musicMetadata.audioUrl}
+                      >
+                        <track kind="captions" />
+                      </audio>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed p-4 text-center text-muted-foreground">
+                      <p className="text-sm">ACE-Step 1.5 サーバー未接続 — 歌詞のみ表示</p>
+                      <p className="text-xs mt-1">ACE_STEP_API_URL を設定して楽曲を生成できます</p>
+                    </div>
+                  )}
+
+                  {/* Lyrics */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2 font-medium">Lyrics</p>
+                    <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed bg-muted/50 rounded-lg p-4 overflow-x-auto">
+                      {artwork.content}
+                    </pre>
+                  </div>
+                </div>
               ) : (
                 <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed bg-muted/50 rounded-lg p-4 overflow-x-auto">
                   {artwork.content}

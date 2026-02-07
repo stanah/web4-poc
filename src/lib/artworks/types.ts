@@ -4,9 +4,19 @@ export type ArtworkStyle =
   | "ascii-art"
   | "short-story"
   | "code-art"
-  | "generative-svg";
+  | "generative-svg"
+  | "music";
 
 export type LicenseType = "open" | "commercial" | "exclusive";
+
+export interface MusicMetadata {
+  genre: string;
+  bpm: number;
+  duration: number;
+  key: string;
+  lyrics: string;
+  audioUrl: string;
+}
 
 export interface Artwork {
   id: number;
@@ -23,6 +33,7 @@ export interface Artwork {
   derivativeCount: number;
   tags: string[];
   license: LicenseType;
+  musicMetadata?: MusicMetadata;
 }
 
 export interface Purchase {
@@ -61,6 +72,7 @@ export const ARTWORK_STYLES: Record<ArtworkStyle, string> = {
   "short-story": "短編小説",
   "code-art": "コードアート",
   "generative-svg": "ジェネラティブSVG",
+  music: "楽曲",
 };
 
 export const LICENSE_LABELS: Record<LicenseType, string> = {

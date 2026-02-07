@@ -2,7 +2,13 @@ import { streamText } from "ai";
 import { getModel } from "@/lib/ai/provider";
 import { getAgentById } from "@/lib/agents/seed-data";
 import { addArtwork, purchaseArtwork, getArtworkById } from "./store";
-import type { ArtworkStyle, LicenseType } from "./types";
+import type { ArtworkStyle, LicenseType, MusicMetadata } from "./types";
+import {
+  generateMusic,
+  checkAceStepHealth,
+  parseGenreFromPrompt,
+  MusicGenerationError,
+} from "./music-client";
 
 const STYLE_PROMPTS: Record<ArtworkStyle, string> = {
   poem: "自由詩の形式で作品を作成してください。改行と余白を活かし、リズム感のある詩にしてください。",
@@ -15,12 +21,16 @@ const STYLE_PROMPTS: Record<ArtworkStyle, string> = {
     "プログラムコードの形式で芸術的な作品を作成してください。コードそのものが美しい視覚表現になるようにしてください。",
   "generative-svg":
     "SVGコードで視覚アートを作成してください。幾何学的パターンや抽象的な表現を使ってください。viewBox='0 0 400 300'で作成してください。",
+  music:
+    "楽曲の歌詞を作成してください。[verse], [chorus], [bridge] などのセクションタグを使い、楽曲構成を明確にしてください。",
 };
 
 export type CreationEventType =
   | "creation-start"
   | "creation-delta"
   | "creation-complete"
+  | "music-generation-start"
+  | "music-generation-complete"
   | "purchase-start"
   | "purchase-complete"
   | "derivative-start"
@@ -42,6 +52,7 @@ export interface CreationEvent {
     amount: number;
     type: "sale" | "derivative-royalty";
   }[];
+  musicMetadata?: MusicMetadata;
   timestamp: string;
 }
 
@@ -49,6 +60,15 @@ interface CreateArtworkParams {
   creatorAgentId: number;
   theme: string;
   style: ArtworkStyle;
+  license?: LicenseType;
+  tags?: string[];
+}
+
+interface CreateMusicParams {
+  creatorAgentId: number;
+  theme: string;
+  musicPrompt: string;
+  duration?: number;
   license?: LicenseType;
   tags?: string[];
 }
@@ -152,6 +172,169 @@ ${agent.description}
     artworkId: artwork.id,
     content: fullContent,
     price: artwork.price,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+export async function* createMusicAutonomously(
+  params: CreateMusicParams,
+): AsyncGenerator<CreationEvent> {
+  const agent = getAgentById(params.creatorAgentId);
+  if (!agent) {
+    yield {
+      type: "error",
+      agentName: "Unknown",
+      content: "Agent not found",
+      timestamp: new Date().toISOString(),
+    };
+    return;
+  }
+
+  // Step 1: AI generates lyrics based on the theme
+  yield {
+    type: "creation-start",
+    agentName: agent.name,
+    content: `テーマ「${params.theme}」で楽曲を制作中... まず歌詞を生成します。`,
+    timestamp: new Date().toISOString(),
+  };
+
+  const model = agent.model ? getModel(agent.model) : getModel();
+
+  const lyricsResult = streamText({
+    model,
+    system: `あなたは${agent.name}です。AIミュージシャンとして楽曲の歌詞を作成します。
+${agent.description}
+
+以下のルールに従ってください：
+- [verse], [chorus], [bridge], [outro] などのセクションタグを使用してください
+- テーマに忠実で、感情的な深みのある歌詞を書いてください
+- 歌詞のみを出力してください（説明や前置きは不要）`,
+    messages: [
+      {
+        role: "user",
+        content: `テーマ: 「${params.theme}」\n音楽スタイル: ${params.musicPrompt}\n\nこのテーマと音楽スタイルに合った歌詞を作成してください。`,
+      },
+    ],
+  });
+
+  let lyrics = "";
+  for await (const chunk of lyricsResult.textStream) {
+    lyrics += chunk;
+    yield {
+      type: "creation-delta",
+      agentName: agent.name,
+      content: chunk,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // Step 2: Generate music via ACE-Step 1.5
+  yield {
+    type: "music-generation-start",
+    agentName: agent.name,
+    content: `歌詞生成完了。ACE-Step 1.5で楽曲を生成中... (${params.duration || 60}秒)`,
+    timestamp: new Date().toISOString(),
+  };
+
+  const { genre, key, bpm } = parseGenreFromPrompt(params.musicPrompt);
+  let audioUrl = "";
+  let actualDuration = params.duration || 60;
+
+  const aceStepAvailable = await checkAceStepHealth();
+
+  if (aceStepAvailable) {
+    try {
+      const musicResult = await generateMusic({
+        prompt: params.musicPrompt,
+        lyrics,
+        duration: params.duration || 60,
+        infer_steps: 60,
+        guidance_scale: 15,
+        scheduler_type: "euler",
+        cfg_type: "apg",
+      });
+
+      audioUrl = musicResult.audioUrl;
+      actualDuration = musicResult.duration;
+    } catch (err) {
+      const errMsg =
+        err instanceof MusicGenerationError ? err.message : "Unknown error";
+      yield {
+        type: "error",
+        agentName: agent.name,
+        content: `ACE-Step楽曲生成エラー: ${errMsg}。歌詞のみで作品を登録します。`,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  } else {
+    yield {
+      type: "music-generation-start",
+      agentName: agent.name,
+      content:
+        "ACE-Stepサーバー未接続。歌詞と楽曲メタデータのみで作品を登録します。",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  const musicMetadata: MusicMetadata = {
+    genre,
+    bpm,
+    duration: actualDuration,
+    key,
+    lyrics,
+    audioUrl,
+  };
+
+  yield {
+    type: "music-generation-complete",
+    agentName: agent.name,
+    content: audioUrl
+      ? `楽曲生成完了。${genre} / ${bpm}BPM / Key: ${key} / ${actualDuration}秒`
+      : `楽曲メタデータ生成完了（オーディオ未生成）。${genre} / ${bpm}BPM / Key: ${key}`,
+    musicMetadata,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Step 3: Generate title
+  const titleResult = streamText({
+    model,
+    messages: [
+      {
+        role: "user",
+        content: `以下は「${params.theme}」をテーマにした${genre}楽曲の歌詞です。この楽曲に短いタイトルを付けてください。タイトルのみを出力してください（15文字以内）。\n\n${lyrics.slice(0, 300)}`,
+      },
+    ],
+  });
+
+  let title = "";
+  for await (const chunk of titleResult.textStream) {
+    title += chunk;
+  }
+  title = title.trim().replace(/[「」『』]/g, "").slice(0, 30);
+
+  const price = 40 + Math.floor(Math.random() * 60);
+  const artwork = addArtwork({
+    title,
+    description: `${agent.name}がACE-Step 1.5を使用して「${params.theme}」をテーマに自律制作した${genre}楽曲。`,
+    content: lyrics,
+    style: "music",
+    creatorAgentId: params.creatorAgentId,
+    createdAt: new Date().toISOString(),
+    price,
+    parentArtworkId: null,
+    tags: params.tags || ["music", genre, params.theme],
+    license: params.license || "commercial",
+    musicMetadata,
+  });
+
+  yield {
+    type: "creation-complete",
+    agentName: agent.name,
+    artworkTitle: artwork.title,
+    artworkId: artwork.id,
+    content: lyrics,
+    price: artwork.price,
+    musicMetadata,
     timestamp: new Date().toISOString(),
   };
 }
@@ -393,10 +576,84 @@ export async function* runArtworkSimulation(): AsyncGenerator<CreationEvent> {
     }
   }
 
+  await new Promise((r) => setTimeout(r, 500));
+
+  // Step 4: OracleBot creates a music track inspired by the original poem (via ACE-Step 1.5)
+  const musicGen = createMusicAutonomously({
+    creatorAgentId: 1,
+    theme: "AIエージェントの自律経済",
+    musicPrompt:
+      "electronic ambient, blockchain theme, futuristic, synth pads, 128 bpm, Am key, ethereal vocals",
+    duration: 60,
+    tags: ["music", "electronic", "ambient", "ai-economy"],
+  });
+
+  let musicArtworkId: number | undefined;
+  for await (const event of musicGen) {
+    yield event;
+    if (event.type === "creation-complete") {
+      musicArtworkId = event.artworkId;
+    }
+  }
+
+  await new Promise((r) => setTimeout(r, 500));
+
+  // Step 5: TranslateAgent purchases the music track
+  if (musicArtworkId) {
+    const musicArtwork = getArtworkById(musicArtworkId);
+    if (musicArtwork) {
+      yield {
+        type: "purchase-start",
+        agentName: "TranslateAgent",
+        artworkTitle: musicArtwork.title,
+        artworkId: musicArtwork.id,
+        price: musicArtwork.price,
+        content: `TranslateAgentが「${musicArtwork.title}」を購入中...`,
+        timestamp: new Date().toISOString(),
+      };
+
+      const musicPurchaseResult = purchaseArtwork(
+        musicArtwork.id,
+        2,
+        "多言語翻訳サービスのBGMおよび音響ブランディング素材として",
+      );
+
+      if (musicPurchaseResult) {
+        yield {
+          type: "purchase-complete",
+          agentName: "TranslateAgent",
+          artworkTitle: musicArtwork.title,
+          artworkId: musicArtwork.id,
+          price: musicArtwork.price,
+          revenueDetails: musicPurchaseResult.revenueEntries.map((r) => ({
+            recipientAgent: getAgentById(r.recipientAgentId)?.name || "Unknown",
+            amount: r.amount,
+            type: r.type,
+          })),
+          content: "購入完了。報酬がクリエイターに分配されました。",
+          timestamp: new Date().toISOString(),
+        };
+
+        yield {
+          type: "revenue-distributed",
+          agentName: "System",
+          content: "楽曲の報酬分配完了",
+          revenueDetails: musicPurchaseResult.revenueEntries.map((r) => ({
+            recipientAgent: getAgentById(r.recipientAgentId)?.name || "Unknown",
+            amount: r.amount,
+            type: r.type,
+          })),
+          timestamp: new Date().toISOString(),
+        };
+      }
+    }
+  }
+
   yield {
     type: "simulation-complete",
     agentName: "System",
-    content: "シミュレーション完了。全ての創作・購入・報酬分配が完了しました。",
+    content:
+      "シミュレーション完了。詩の創作 → 俳句二次創作 → 楽曲制作（ACE-Step 1.5） → 購入・報酬分配の全フローが完了しました。",
     timestamp: new Date().toISOString(),
   };
 }

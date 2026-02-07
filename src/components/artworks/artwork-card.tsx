@@ -46,6 +46,16 @@ export function ArtworkCard({ artwork, index = 0 }: ArtworkCardProps) {
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 [SVG Art]
               </div>
+            ) : artwork.style === "music" ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <span className="text-base">♪</span>
+                  {artwork.musicMetadata && (
+                    <span>{artwork.musicMetadata.genre} / {artwork.musicMetadata.bpm}BPM / {artwork.musicMetadata.key}</span>
+                  )}
+                </div>
+                <pre className="whitespace-pre-wrap">{artwork.content.slice(0, 150)}</pre>
+              </div>
             ) : (
               <pre className="whitespace-pre-wrap">{artwork.content.slice(0, 200)}</pre>
             )}

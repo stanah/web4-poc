@@ -21,6 +21,8 @@ const EVENT_ICONS: Record<string, string> = {
   "creation-start": "🎨",
   "creation-delta": "",
   "creation-complete": "✅",
+  "music-generation-start": "🎵",
+  "music-generation-complete": "🎶",
   "purchase-start": "🛒",
   "purchase-complete": "💰",
   "derivative-start": "🔄",
@@ -34,6 +36,8 @@ const EVENT_ICONS: Record<string, string> = {
 const EVENT_COLORS: Record<string, string> = {
   "creation-start": "bg-purple-500/10 border-purple-500/20",
   "creation-complete": "bg-purple-500/10 border-purple-500/20",
+  "music-generation-start": "bg-pink-500/10 border-pink-500/20",
+  "music-generation-complete": "bg-pink-500/10 border-pink-500/20",
   "purchase-start": "bg-blue-500/10 border-blue-500/20",
   "purchase-complete": "bg-green-500/10 border-green-500/20",
   "derivative-start": "bg-orange-500/10 border-orange-500/20",
@@ -323,10 +327,57 @@ function CreationEventMessage({ event }: { event: CreationEvent }) {
             {event.content}
           </pre>
         )}
+        {event.musicMetadata && (
+          <div className="flex items-center gap-2 mt-2 text-xs px-2 py-1.5 bg-pink-500/10 rounded">
+            <span>♪</span>
+            <span>{event.musicMetadata.genre}</span>
+            <span>/</span>
+            <span>{event.musicMetadata.bpm} BPM</span>
+            <span>/</span>
+            <span>Key: {event.musicMetadata.key}</span>
+            <span>/</span>
+            <span>{event.musicMetadata.duration}s</span>
+          </div>
+        )}
         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
           {event.price && <span>価格: {event.price} tokens</span>}
           {event.artworkId && <span>ID: #{event.artworkId}</span>}
         </div>
+      </motion.div>
+    );
+  }
+
+  // Music generation events
+  if (
+    event.type === "music-generation-start" ||
+    event.type === "music-generation-complete"
+  ) {
+    return (
+      <motion.div
+        className={`rounded-lg border p-3 ${bg}`}
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center gap-2">
+          <span>{icon}</span>
+          <span className={`text-sm font-semibold ${agentColor}`}>
+            {event.agentName}
+          </span>
+          <Badge variant="outline" className="text-[10px] border-pink-500/50 text-pink-600">
+            ACE-Step 1.5
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">{event.content}</p>
+        {event.musicMetadata && (
+          <div className="flex items-center gap-2 mt-2 text-xs px-2 py-1.5 bg-pink-500/10 rounded">
+            <span>♪</span>
+            <span>{event.musicMetadata.genre}</span>
+            <span>/</span>
+            <span>{event.musicMetadata.bpm} BPM</span>
+            <span>/</span>
+            <span>Key: {event.musicMetadata.key}</span>
+          </div>
+        )}
       </motion.div>
     );
   }
