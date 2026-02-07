@@ -42,3 +42,8 @@ next-env.d.ts
 
 # claude code
 .claude/
+**/CLAUDE.md
+!/CLAUDE.md
+
+
+.playwright-mcp/
