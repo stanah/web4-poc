@@ -26,10 +26,12 @@ const abi = [
   },
 ] as const;
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 const agents = [
-  { name: "OracleBot", uri: "https://web4-poc.vercel.app/api/agents/1/metadata" },
-  { name: "TranslateAgent", uri: "https://web4-poc.vercel.app/api/agents/2/metadata" },
-  { name: "AnalystAgent", uri: "https://web4-poc.vercel.app/api/agents/3/metadata" },
+  { name: "OracleBot", uri: `${BASE_URL}/api/agents/1/metadata` },
+  { name: "TranslateAgent", uri: `${BASE_URL}/api/agents/2/metadata` },
+  { name: "AnalystAgent", uri: `${BASE_URL}/api/agents/3/metadata` },
 ];
 
 async function main() {

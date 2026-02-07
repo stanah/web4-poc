@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import { useReadContracts } from "wagmi";
 import { identityRegistryAbi } from "../abis/identity-registry";
+import { reputationRegistryAbi } from "../abis/reputation-registry";
 import { CONTRACT_ADDRESSES } from "../addresses";
 import { useTotalAgents } from "./use-identity";
 import type { AgentMetadata } from "@/lib/erc8004/types";
-import type { DemoAgent } from "@/lib/agents/seed-data";
 
-const address = CONTRACT_ADDRESSES.sepolia.identityRegistry;
+const identityAddress = CONTRACT_ADDRESSES.sepolia.identityRegistry;
+const reputationAddress = CONTRACT_ADDRESSES.sepolia.reputationRegistry;
 
-interface OnChainAgent extends AgentMetadata {
+export interface OnChainAgent extends AgentMetadata {
   id: number;
   registeredAt: string;
   feedbackCount: number;
@@ -19,17 +20,25 @@ interface OnChainAgent extends AgentMetadata {
 
 export function useAgentsList() {
   const { data: totalSupply, isLoading: isLoadingTotal } = useTotalAgents();
-  const [agents, setAgents] = useState<DemoAgent[]>([]);
+  const [agents, setAgents] = useState<OnChainAgent[]>([]);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
 
   const count = totalSupply ? Number(totalSupply) : 0;
 
   // Build tokenURI read calls for all agent IDs (1..totalSupply)
   const tokenURICalls = Array.from({ length: count }, (_, i) => ({
-    address,
+    address: identityAddress,
     abi: identityRegistryAbi,
     functionName: "tokenURI" as const,
     args: [BigInt(i + 1)] as const,
+  }));
+
+  // Build reputation summary calls for all agent IDs
+  const reputationCalls = Array.from({ length: count }, (_, i) => ({
+    address: reputationAddress,
+    abi: reputationRegistryAbi,
+    functionName: "getSummary" as const,
+    args: [BigInt(i + 1), [] as readonly `0x${string}`[], "", ""] as const,
   }));
 
   const {
@@ -37,6 +46,13 @@ export function useAgentsList() {
     isLoading: isLoadingURIs,
   } = useReadContracts({
     contracts: tokenURICalls,
+    query: { enabled: count > 0 },
+  });
+
+  const {
+    data: reputationResults,
+  } = useReadContracts({
+    contracts: reputationCalls,
     query: { enabled: count > 0 },
   });
 
@@ -55,7 +71,6 @@ export function useAgentsList() {
 
         const uri = result.result as string;
         try {
-          // tokenURI may be a URL or a data URI
           let metadata: AgentMetadata;
           if (uri.startsWith("data:")) {
             const json = uri.split(",")[1];
@@ -65,12 +80,22 @@ export function useAgentsList() {
             metadata = await res.json();
           }
 
+          // Extract reputation data from on-chain results
+          let feedbackCount = 0;
+          let averageScore = 0;
+          const repResult = reputationResults?.[i];
+          if (repResult?.status === "success" && repResult.result) {
+            const rep = repResult.result as unknown as [bigint, bigint, number];
+            feedbackCount = Number(rep[0]);
+            averageScore = Number(rep[1]) / Math.pow(10, rep[2]);
+          }
+
           fetched.push({
             ...metadata,
             id: i + 1,
             registeredAt: new Date().toISOString(),
-            feedbackCount: 0,
-            averageScore: 0,
+            feedbackCount,
+            averageScore,
           });
         } catch {
           // Skip agents with invalid metadata
@@ -85,7 +110,7 @@ export function useAgentsList() {
 
     fetchMetadata();
     return () => { cancelled = true; };
-  }, [uriResults]);
+  }, [uriResults, reputationResults]);
 
   return {
     agents,

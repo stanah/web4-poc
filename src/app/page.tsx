@@ -14,7 +14,7 @@ function useOnChainStats() {
   const { data: summary2 } = useReputationSummary(2);
   const { data: summary3 } = useReputationSummary(3);
 
-  const agents = totalSupply ? String(Number(totalSupply)) : "3";
+  const agents = totalSupply ? String(Number(totalSupply)) : "0";
 
   const summaries = [summary1, summary2, summary3]
     .filter(Boolean)
@@ -26,15 +26,11 @@ function useOnChainStats() {
       };
     });
 
-  const hasData = summaries.length > 0 && summaries.some((s) => s.totalFeedback > 0);
+  const totalFeedback = String(summaries.reduce((acc, s) => acc + s.totalFeedback, 0));
 
-  const totalFeedback = hasData
-    ? String(summaries.reduce((acc, s) => acc + s.totalFeedback, 0))
-    : "107";
-
-  const avgRating = hasData
+  const avgRating = summaries.length > 0
     ? (summaries.reduce((acc, s) => acc + s.averageScore, 0) / summaries.length).toFixed(1)
-    : "4.5";
+    : "0";
 
   return { agents, totalFeedback, avgRating };
 }

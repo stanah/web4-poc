@@ -5,11 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useTotalAgents } from "@/lib/contracts/hooks/use-identity";
 import { useReputationSummary } from "@/lib/contracts/hooks/use-reputation";
-import { DEMO_AGENTS } from "@/lib/agents/seed-data";
+import { useAgentsList } from "@/lib/contracts/hooks/use-agents-list";
 import { useTranslations } from "next-intl";
 
 function useEconomyData() {
   const { data: totalSupply } = useTotalAgents();
+  const { agents: agentsList } = useAgentsList();
   const { data: summary1 } = useReputationSummary(1, { refetchInterval: 15_000 });
   const { data: summary2 } = useReputationSummary(2, { refetchInterval: 15_000 });
   const { data: summary3 } = useReputationSummary(3, { refetchInterval: 15_000 });
@@ -18,43 +19,38 @@ function useEconomyData() {
 
   const summaries = [summary1, summary2, summary3]
     .filter(Boolean)
-    .map((s) => {
+    .map((s, i) => {
       const sum = s as { totalFeedback: bigint; averageValue: bigint; averageDecimals: number };
       return {
+        agentId: i + 1,
         totalFeedback: Number(sum.totalFeedback),
         averageScore: Number(sum.averageValue) / Math.pow(10, sum.averageDecimals),
       };
     });
 
-  const hasOnChainData = summaries.length > 0 && summaries.some((s) => s.totalFeedback > 0);
+  const totalFeedback = summaries.reduce((acc, s) => acc + s.totalFeedback, 0);
+  const avgRating = summaries.length > 0
+    ? summaries.reduce((acc, s) => acc + s.averageScore, 0) / summaries.length
+    : 0;
 
-  if (hasOnChainData) {
-    const totalFeedback = summaries.reduce((acc, s) => acc + s.totalFeedback, 0);
-    const avgRating =
-      summaries.reduce((acc, s) => acc + s.averageScore, 0) / summaries.length;
-    return {
-      totalAgents: onChainTotal || summaries.length,
-      totalFeedback,
-      avgRating,
-      rankings: DEMO_AGENTS.map((agent, i) => ({
-        name: agent.name,
-        score: summaries[i]?.averageScore ?? agent.averageScore,
-        feedbacks: summaries[i]?.totalFeedback ?? agent.feedbackCount,
-        percentage: Math.round(((summaries[i]?.averageScore ?? agent.averageScore) / 5) * 100),
-      })).sort((a, b) => b.score - a.score),
-    };
-  }
+  const rankings = summaries
+    .map((s) => {
+      const agent = agentsList.find((a) => a.id === s.agentId);
+      return {
+        name: agent?.name ?? `Agent #${s.agentId}`,
+        score: s.averageScore,
+        feedbacks: s.totalFeedback,
+        percentage: Math.round((s.averageScore / 5) * 100),
+      };
+    })
+    .filter((r) => r.feedbacks > 0)
+    .sort((a, b) => b.score - a.score);
 
-  // Fallback to seed data
   return {
-    totalAgents: 3,
-    totalFeedback: 107,
-    avgRating: 4.47,
-    rankings: [
-      { name: "AnalystAgent", score: 4.7, feedbacks: 28, percentage: 94 },
-      { name: "TranslateAgent", score: 4.5, feedbacks: 32, percentage: 90 },
-      { name: "OracleBot", score: 4.2, feedbacks: 47, percentage: 84 },
-    ],
+    totalAgents: onChainTotal,
+    totalFeedback,
+    avgRating,
+    rankings,
   };
 }
 
@@ -67,7 +63,7 @@ export function EconomyStats() {
     { label: t("totalAgents"), value: String(totalAgents), subtitle: tc("onChain"), color: "text-green-500" },
     { label: t("totalFeedback"), value: String(totalFeedback), subtitle: tc("onChain"), color: "text-blue-500" },
     { label: t("avgRating"), value: avgRating.toFixed(2), subtitle: tc("acrossAllAgents"), color: "text-yellow-500" },
-    { label: t("interactions"), value: "342", subtitle: tc("today", { count: 87 }), color: "text-purple-500" },
+    { label: t("interactions"), value: String(totalFeedback), subtitle: tc("onChain"), color: "text-purple-500" },
   ];
 
   return (

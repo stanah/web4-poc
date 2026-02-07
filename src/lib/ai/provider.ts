@@ -17,7 +17,6 @@ function getProvider(name: string): ReturnType<typeof createOpenAI> {
   providers[name] = createOpenAI({
     ...(baseURL ? { baseURL } : {}),
     apiKey,
-    compatibility: "compatible",
   });
   return providers[name];
 }

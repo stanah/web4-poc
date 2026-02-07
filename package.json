@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "anvil": "anvil --fork-url https://rpc.sepolia.org",
+    "seed": "tsx scripts/seed-agents.ts && tsx scripts/seed-feedback.ts",
+    "seed:agents": "tsx scripts/seed-agents.ts",
+    "seed:feedback": "tsx scripts/seed-feedback.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.25",

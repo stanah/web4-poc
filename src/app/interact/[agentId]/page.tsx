@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/interaction/chat-interface";
-import { getAgentById } from "@/lib/agents/seed-data";
+import { useAgentMetadata } from "@/lib/contracts/hooks/use-agent-metadata";
 import { useTranslations } from "next-intl";
 
 export default function InteractPage({
@@ -15,9 +15,20 @@ export default function InteractPage({
 }) {
   const { agentId } = use(params);
   const id = parseInt(agentId, 10);
-  const agent = getAgentById(id);
+  const { metadata: agent, isLoading } = useAgentMetadata(id);
   const t = useTranslations("Interact");
   const tc = useTranslations("Common");
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span>{tc("loading")}</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!agent) {
     return (

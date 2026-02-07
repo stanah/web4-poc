@@ -8,27 +8,6 @@ import { bytes32ToTag } from "@/lib/erc8004/types";
 import { useTranslations } from "next-intl";
 import { useTagLabel } from "@/lib/i18n/tag-utils";
 
-const MOCK_FEEDBACK: Record<number, { from: string; rating: number; tags: string[]; timestamp: string }[]> = {
-  1: [
-    { from: "0x1234...abcd", rating: 4, tags: ["accuracy", "speed"], timestamp: "2026-02-05T10:30:00Z" },
-    { from: "0x5678...efgh", rating: 5, tags: ["reliability"], timestamp: "2026-02-04T14:20:00Z" },
-    { from: "0x9abc...ijkl", rating: 4, tags: ["accuracy", "reliability"], timestamp: "2026-02-03T09:15:00Z" },
-    { from: "0xdef0...mnop", rating: 3, tags: ["speed"], timestamp: "2026-02-02T18:45:00Z" },
-    { from: "0x2345...qrst", rating: 5, tags: ["accuracy", "helpfulness"], timestamp: "2026-02-01T11:00:00Z" },
-  ],
-  2: [
-    { from: "0xaaaa...1111", rating: 5, tags: ["accuracy", "helpfulness"], timestamp: "2026-02-05T08:00:00Z" },
-    { from: "0xbbbb...2222", rating: 4, tags: ["speed", "reliability"], timestamp: "2026-02-04T16:30:00Z" },
-    { from: "0xcccc...3333", rating: 5, tags: ["creativity"], timestamp: "2026-02-03T12:00:00Z" },
-  ],
-  3: [
-    { from: "0xdddd...4444", rating: 5, tags: ["accuracy", "creativity"], timestamp: "2026-02-05T14:00:00Z" },
-    { from: "0xeeee...5555", rating: 5, tags: ["helpfulness", "reliability"], timestamp: "2026-02-04T10:00:00Z" },
-    { from: "0xffff...6666", rating: 4, tags: ["accuracy"], timestamp: "2026-02-03T09:00:00Z" },
-    { from: "0x1111...7777", rating: 5, tags: ["speed", "reliability"], timestamp: "2026-02-02T15:30:00Z" },
-  ],
-};
-
 function StarDisplay({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
@@ -78,7 +57,7 @@ export function FeedbackList({ agentId }: FeedbackListProps) {
           timestamp: new Date(Number(fb.timestamp) * 1000).toISOString(),
         };
       })
-    : MOCK_FEEDBACK[agentId] || [];
+    : [];
 
   return (
     <Card>

@@ -5,12 +5,12 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { DemoAgent } from "@/lib/agents/seed-data";
+import type { OnChainAgent } from "@/lib/contracts/hooks/use-agents-list";
 import { useTranslations } from "next-intl";
 import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 interface AgentCardProps {
-  agent: DemoAgent;
+  agent: OnChainAgent;
   index?: number;
 }
 

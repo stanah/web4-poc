@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getAgentById } from "@/lib/agents/seed-data";
+import { useAgentMetadata } from "@/lib/contracts/hooks/use-agent-metadata";
 import { ReputationBadge } from "@/components/reputation/reputation-badge";
 import { FeedbackForm } from "@/components/reputation/feedback-form";
 import { FeedbackList } from "@/components/reputation/feedback-list";
@@ -18,7 +18,7 @@ import { useTranslations } from "next-intl";
 import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 function AgentProfile({ agentId }: { agentId: number }) {
-  const seedAgent = getAgentById(agentId);
+  const { metadata: agent, isLoading: isLoadingAgent } = useAgentMetadata(agentId);
   const { data: summary } = useReputationSummary(agentId);
   const { data: tokenURI } = useAgentTokenURI(BigInt(agentId));
   const { data: validationsData } = useValidations(agentId);
@@ -27,16 +27,24 @@ function AgentProfile({ agentId }: { agentId: number }) {
   const tc = useTranslations("Common");
   const getTagLabel = useTagLabel();
 
-  // Use on-chain reputation if available, otherwise seed data
   const onChainScore = summary
     ? Number((summary as { averageValue: bigint }).averageValue) /
       Math.pow(10, (summary as { averageDecimals: number }).averageDecimals)
-    : undefined;
+    : 0;
   const onChainFeedbackCount = summary
     ? Number((summary as { totalFeedback: bigint }).totalFeedback)
-    : undefined;
+    : 0;
 
-  const agent = seedAgent;
+  if (isLoadingAgent) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span>{tc("loading")}</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!agent) {
     return (
@@ -52,9 +60,6 @@ function AgentProfile({ agentId }: { agentId: number }) {
     );
   }
 
-  const displayScore = onChainScore ?? agent.averageScore;
-  const displayFeedbackCount = onChainFeedbackCount ?? agent.feedbackCount;
-
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
@@ -69,7 +74,7 @@ function AgentProfile({ agentId }: { agentId: number }) {
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">{agent.name}</h1>
-            <ReputationBadge score={displayScore} />
+            <ReputationBadge score={onChainScore} />
           </div>
           <p className="text-muted-foreground">{agent.description}</p>
           <div className="flex flex-wrap gap-2 mt-2">
@@ -125,7 +130,7 @@ function AgentProfile({ agentId }: { agentId: number }) {
 
       {/* Reputation */}
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -133,23 +138,15 @@ function AgentProfile({ agentId }: { agentId: number }) {
         <Card>
           <CardContent className="pt-6 text-center">
             <div className="text-3xl font-bold">
-              {displayScore.toFixed(1)}
+              {onChainScore.toFixed(1)}
             </div>
             <p className="text-sm text-muted-foreground">{t("averageScore")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <div className="text-3xl font-bold">{displayFeedbackCount}</div>
+            <div className="text-3xl font-bold">{onChainFeedbackCount}</div>
             <p className="text-sm text-muted-foreground">{t("totalReviews")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <div className="text-3xl font-bold">
-              {new Date(agent.registeredAt).toLocaleDateString()}
-            </div>
-            <p className="text-sm text-muted-foreground">{t("registered")}</p>
           </CardContent>
         </Card>
       </motion.div>

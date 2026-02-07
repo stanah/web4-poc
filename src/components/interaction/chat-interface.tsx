@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { MessageBubble } from "./message-bubble";
-import type { DemoAgent } from "@/lib/agents/seed-data";
+import type { AgentMetadata } from "@/lib/erc8004/types";
 import { useTranslations } from "next-intl";
 
 interface ChatInterfaceProps {
-  agent: DemoAgent;
+  agent: AgentMetadata & { id: number };
 }
 
 export function ChatInterface({ agent }: ChatInterfaceProps) {

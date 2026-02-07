@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AgentGrid } from "@/components/agents/agent-grid";
-import { DEMO_AGENTS } from "@/lib/agents/seed-data";
 import { useAgentsList } from "@/lib/contracts/hooks/use-agents-list";
 import { useTranslations } from "next-intl";
 import { useTagLabel } from "@/lib/i18n/tag-utils";
@@ -19,8 +18,7 @@ export default function MarketplacePage() {
   const t = useTranslations("Marketplace");
   const getTagLabel = useTagLabel();
 
-  // Use on-chain agents if available, otherwise fall back to seed data
-  const agents = onChainAgents.length > 0 ? onChainAgents : DEMO_AGENTS;
+  const agents = onChainAgents;
 
   const filtered = agents.filter((agent) => {
     const matchesSearch =

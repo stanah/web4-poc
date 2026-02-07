@@ -1,11 +1,11 @@
 "use client";
 
 import { AgentCard } from "./agent-card";
-import type { DemoAgent } from "@/lib/agents/seed-data";
+import type { OnChainAgent } from "@/lib/contracts/hooks/use-agents-list";
 import { useTranslations } from "next-intl";
 
 interface AgentGridProps {
-  agents: DemoAgent[];
+  agents: OnChainAgent[];
 }
 
 export function AgentGrid({ agents }: AgentGridProps) {

@@ -40,7 +40,10 @@ export function useGiveFeedback() {
   return { giveFeedback, hash, isPending, isConfirming, isSuccess, error };
 }
 
-export function useReputationSummary(agentId: number | undefined) {
+export function useReputationSummary(
+  agentId: number | undefined,
+  options?: { refetchInterval?: number },
+) {
   return useReadContract({
     address,
     abi: reputationRegistryAbi,
@@ -49,7 +52,10 @@ export function useReputationSummary(agentId: number | undefined) {
       agentId !== undefined
         ? [BigInt(agentId), [], "", ""]
         : undefined,
-    query: { enabled: agentId !== undefined },
+    query: {
+      enabled: agentId !== undefined,
+      ...(options?.refetchInterval ? { refetchInterval: options.refetchInterval } : {}),
+    },
   });
 }
 

@@ -1,6 +1,7 @@
 import { streamText } from "ai";
 import { getModel } from "./provider";
 import { AGENT_PROMPTS } from "./agent-prompts";
+import { getAgentById } from "@/lib/agents/seed-data";
 import type { Scenario, ScenarioStep } from "./scenarios";
 
 const AGENT_IDS: Record<string, number> = {
@@ -27,6 +28,7 @@ export interface SimulationEvent {
   content?: string;
   feedbackScore?: number;
   feedbackTags?: [string, string];
+  txHash?: string;
   timestamp: string;
 }
 
@@ -91,8 +93,11 @@ export async function* runSimulation(
       content: msg,
     }));
 
+    const agentConfig = getAgentById(respondingAgentId);
+    const model = agentConfig?.model ? getModel(agentConfig.model) : getModel();
+
     const result = streamText({
-      model: getModel(),
+      model,
       system: `${systemPrompt}\n\nYou are in an A2A (Agent-to-Agent) interaction. You are ${respondingAgentName} responding to ${step.action === "request" ? step.from : step.to}. Keep your response concise (max 150 words).`,
       messages: [...contextMessages, { role: "user" as const, content: step.prompt }],
     });
