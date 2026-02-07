@@ -4,8 +4,70 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTotalAgents } from "@/lib/contracts/hooks/use-identity";
+import { useReputationSummary } from "@/lib/contracts/hooks/use-reputation";
+import { useTranslations } from "next-intl";
+
+function useOnChainStats() {
+  const { data: totalSupply } = useTotalAgents();
+  const { data: summary1 } = useReputationSummary(1);
+  const { data: summary2 } = useReputationSummary(2);
+  const { data: summary3 } = useReputationSummary(3);
+
+  const agents = totalSupply ? String(Number(totalSupply)) : "3";
+
+  const summaries = [summary1, summary2, summary3]
+    .filter(Boolean)
+    .map((s) => {
+      const sum = s as { totalFeedback: bigint; averageValue: bigint; averageDecimals: number };
+      return {
+        totalFeedback: Number(sum.totalFeedback),
+        averageScore: Number(sum.averageValue) / Math.pow(10, sum.averageDecimals),
+      };
+    });
+
+  const hasData = summaries.length > 0 && summaries.some((s) => s.totalFeedback > 0);
+
+  const totalFeedback = hasData
+    ? String(summaries.reduce((acc, s) => acc + s.totalFeedback, 0))
+    : "107";
+
+  const avgRating = hasData
+    ? (summaries.reduce((acc, s) => acc + s.averageScore, 0) / summaries.length).toFixed(1)
+    : "4.5";
+
+  return { agents, totalFeedback, avgRating };
+}
 
 export default function HomePage() {
+  const { agents, totalFeedback, avgRating } = useOnChainStats();
+  const t = useTranslations("HomePage");
+
+  const features = [
+    {
+      icon: "🪪",
+      title: t("featureIdentityTitle"),
+      desc: t("featureIdentityDesc"),
+    },
+    {
+      icon: "⭐",
+      title: t("featureReputationTitle"),
+      desc: t("featureReputationDesc"),
+    },
+    {
+      icon: "✅",
+      title: t("featureValidationTitle"),
+      desc: t("featureValidationDesc"),
+    },
+  ];
+
+  const stats = [
+    { label: t("statAgents"), value: agents },
+    { label: t("statFeedback"), value: totalFeedback },
+    { label: t("statRating"), value: avgRating },
+    { label: t("statChain"), value: "Sepolia" },
+  ];
+
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-16">
       {/* Hero */}
@@ -16,29 +78,27 @@ export default function HomePage() {
         transition={{ duration: 0.6 }}
       >
         <Badge variant="outline" className="text-sm px-4 py-1">
-          ERC-8004 — Mainnet Live
+          {t("badge")}
         </Badge>
         <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-          Trustless{" "}
+          {t("title1")}{" "}
           <span className="bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent">
-            AI Agent
+            {t("titleHighlight")}
           </span>{" "}
-          Economy
+          {t("title2")}
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Register, discover, interact with, and rate AI agents on-chain.
-          Built on ERC-8004&apos;s three on-chain registries for identity,
-          reputation, and validation.
+          {t("description")}
         </p>
         <div className="flex items-center justify-center gap-4">
           <Button asChild size="lg">
-            <Link href="/marketplace">Explore Agents</Link>
+            <Link href="/marketplace">{t("exploreAgents")}</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link href="/register">Register Agent</Link>
+            <Link href="/register">{t("registerAgent")}</Link>
           </Button>
           <Button asChild variant="secondary" size="lg">
-            <Link href="/dashboard">Watch AI Agents Trade</Link>
+            <Link href="/dashboard">{t("watchTrade")}</Link>
           </Button>
         </div>
       </motion.section>
@@ -50,23 +110,7 @@ export default function HomePage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3, duration: 0.6 }}
       >
-        {[
-          {
-            icon: "🪪",
-            title: "Identity Registry",
-            desc: "Register AI agents as ERC-721 NFTs with on-chain metadata URIs. Each agent gets a unique, verifiable identity.",
-          },
-          {
-            icon: "⭐",
-            title: "Reputation Registry",
-            desc: "Rate and review agents with tagged feedback. Reputation scores are fully on-chain and tamper-proof.",
-          },
-          {
-            icon: "✅",
-            title: "Validation Registry",
-            desc: "Third-party validators can attest to agent capabilities, creating a web of trust.",
-          },
-        ].map((feature, i) => (
+        {features.map((feature, i) => (
           <motion.div
             key={feature.title}
             className="rounded-xl border bg-card p-6 space-y-3"
@@ -88,12 +132,7 @@ export default function HomePage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
       >
-        {[
-          { label: "Registered Agents", value: "3" },
-          { label: "Feedback Given", value: "107" },
-          { label: "Avg. Rating", value: "4.5" },
-          { label: "Chain", value: "Sepolia" },
-        ].map((stat) => (
+        {stats.map((stat) => (
           <div key={stat.label} className="text-center">
             <div className="text-3xl font-bold">{stat.value}</div>
             <div className="text-sm text-muted-foreground">{stat.label}</div>

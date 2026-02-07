@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 
 interface TxStatusProps {
   hash?: `0x${string}`;
@@ -17,8 +18,10 @@ export function TxStatus({
   isConfirming,
   isSuccess,
   error,
-  successMessage = "Transaction confirmed!",
+  successMessage,
 }: TxStatusProps) {
+  const t = useTranslations("TxStatus");
+
   if (!hash && !isPending && !error) return null;
 
   return (
@@ -26,21 +29,21 @@ export function TxStatus({
       {isPending && (
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-          <span className="text-sm">Waiting for wallet confirmation...</span>
+          <span className="text-sm">{t("waitingWallet")}</span>
         </div>
       )}
 
       {isConfirming && hash && (
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-          <span className="text-sm">Confirming transaction...</span>
+          <span className="text-sm">{t("confirming")}</span>
           <a
             href={`https://sepolia.etherscan.io/tx/${hash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-primary hover:underline"
           >
-            View on Etherscan
+            {t("viewOnEtherscan")}
           </a>
         </div>
       )}
@@ -49,7 +52,7 @@ export function TxStatus({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Badge variant="default" className="bg-green-600">
-              Confirmed
+              {t("confirmed")}
             </Badge>
             <span className="text-sm">{successMessage}</span>
           </div>
@@ -59,14 +62,14 @@ export function TxStatus({
             rel="noopener noreferrer"
             className="text-xs text-primary hover:underline"
           >
-            View transaction
+            {t("viewTransaction")}
           </a>
         </div>
       )}
 
       {error && (
         <div className="flex items-center gap-2">
-          <Badge variant="destructive">Error</Badge>
+          <Badge variant="destructive">{t("error")}</Badge>
           <span className="text-sm text-destructive">
             {error.message.slice(0, 100)}
           </span>

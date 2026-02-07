@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { AgentGrid } from "@/components/agents/agent-grid";
 import { DEMO_AGENTS } from "@/lib/agents/seed-data";
 import { useAgentsList } from "@/lib/contracts/hooks/use-agents-list";
+import { useTranslations } from "next-intl";
+import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 const ALL_TAGS = ["all", "oracle", "defi", "nlp", "translation", "analytics", "research", "price-feed"];
 
@@ -14,6 +16,8 @@ export default function MarketplacePage() {
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState("all");
   const { agents: onChainAgents, isLoading } = useAgentsList();
+  const t = useTranslations("Marketplace");
+  const getTagLabel = useTagLabel();
 
   // Use on-chain agents if available, otherwise fall back to seed data
   const agents = onChainAgents.length > 0 ? onChainAgents : DEMO_AGENTS;
@@ -34,15 +38,15 @@ export default function MarketplacePage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-3xl font-bold">Agent Marketplace</h1>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Discover and interact with AI agents registered on ERC-8004
+          {t("description")}
         </p>
       </motion.div>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Input
-          placeholder="Search agents..."
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="sm:max-w-xs"
@@ -52,10 +56,10 @@ export default function MarketplacePage() {
             <Badge
               key={tag}
               variant={selectedTag === tag ? "default" : "outline"}
-              className="cursor-pointer capitalize"
+              className="cursor-pointer"
               onClick={() => setSelectedTag(tag)}
             >
-              {tag}
+              {getTagLabel(tag)}
             </Badge>
           ))}
         </div>
@@ -65,7 +69,7 @@ export default function MarketplacePage() {
         <div className="flex items-center justify-center py-12">
           <div className="flex items-center gap-3 text-muted-foreground">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span>Loading agents from chain...</span>
+            <span>{t("loadingFromChain")}</span>
           </div>
         </div>
       ) : (

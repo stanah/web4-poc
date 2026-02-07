@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { DemoAgent } from "@/lib/agents/seed-data";
+import { useTranslations } from "next-intl";
+import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 interface AgentCardProps {
   agent: DemoAgent;
@@ -35,6 +37,9 @@ function StarRating({ score }: { score: number }) {
 }
 
 export function AgentCard({ agent, index = 0 }: AgentCardProps) {
+  const t = useTranslations("Common");
+  const getTagLabel = useTagLabel();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -68,7 +73,7 @@ export function AgentCard({ agent, index = 0 }: AgentCardProps) {
           <div className="flex flex-wrap gap-1.5">
             {agent.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">
-                {tag}
+                {getTagLabel(tag)}
               </Badge>
             ))}
           </div>
@@ -76,16 +81,16 @@ export function AgentCard({ agent, index = 0 }: AgentCardProps) {
           <div className="flex items-center justify-between">
             <StarRating score={agent.averageScore} />
             <span className="text-xs text-muted-foreground">
-              {agent.feedbackCount} reviews
+              {agent.feedbackCount} {t("reviews")}
             </span>
           </div>
 
           <div className="flex gap-2">
             <Button asChild variant="default" size="sm" className="flex-1">
-              <Link href={`/agents/${agent.id}`}>Profile</Link>
+              <Link href={`/agents/${agent.id}`}>{t("profile")}</Link>
             </Button>
             <Button asChild variant="outline" size="sm" className="flex-1">
-              <Link href={`/interact/${agent.id}`}>Interact</Link>
+              <Link href={`/interact/${agent.id}`}>{t("interact")}</Link>
             </Button>
           </div>
         </CardContent>

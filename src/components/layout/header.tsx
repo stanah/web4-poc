@@ -5,15 +5,17 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
-
-const navigation = [
-  { name: "Marketplace", href: "/marketplace" },
-  { name: "Register", href: "/register" },
-  { name: "Dashboard", href: "/dashboard" },
-];
+import { useTranslations } from "next-intl";
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("Header");
+
+  const navigation = [
+    { name: t("marketplace"), href: "/marketplace" },
+    { name: t("register"), href: "/register" },
+    { name: t("dashboard"), href: "/dashboard" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">

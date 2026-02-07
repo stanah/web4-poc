@@ -8,7 +8,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useWatchContractEvent } from "wagmi";
 import { identityRegistryAbi } from "@/lib/contracts/abis/identity-registry";
 import { reputationRegistryAbi } from "@/lib/contracts/abis/reputation-registry";
+import { validationRegistryAbi } from "@/lib/contracts/abis/validation-registry";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
+import { useTranslations } from "next-intl";
 
 export interface ActivityEvent {
   id: string;
@@ -17,16 +19,6 @@ export interface ActivityEvent {
   description: string;
   timestamp: string;
 }
-
-const SEED_EVENTS: ActivityEvent[] = [
-  { id: "1", type: "registration", agentName: "OracleBot", description: "Registered as Agent #1", timestamp: "2026-02-06T03:00:00Z" },
-  { id: "2", type: "registration", agentName: "TranslateAgent", description: "Registered as Agent #2", timestamp: "2026-02-06T03:01:00Z" },
-  { id: "3", type: "registration", agentName: "AnalystAgent", description: "Registered as Agent #3", timestamp: "2026-02-06T03:02:00Z" },
-  { id: "4", type: "feedback", agentName: "OracleBot", description: "Received 5-star feedback [accuracy, speed]", timestamp: "2026-02-06T03:05:00Z" },
-  { id: "5", type: "interaction", agentName: "TranslateAgent", description: "Completed translation request", timestamp: "2026-02-06T03:06:00Z" },
-  { id: "6", type: "feedback", agentName: "AnalystAgent", description: "Received 4-star feedback [reliability]", timestamp: "2026-02-06T03:07:00Z" },
-  { id: "7", type: "validation", agentName: "OracleBot", description: "Validated by 0x1234...abcd", timestamp: "2026-02-06T03:08:00Z" },
-];
 
 const AGENT_NAMES: Record<number, string> = {
   1: "OracleBot",
@@ -47,7 +39,13 @@ interface ActivityFeedProps {
 }
 
 export function ActivityFeed({ externalEvents }: ActivityFeedProps) {
-  const [events, setEvents] = useState<ActivityEvent[]>(SEED_EVENTS);
+  const [events, setEvents] = useState<ActivityEvent[]>([]);
+  const t = useTranslations("ActivityFeed");
+
+  const typeLabel = (type: ActivityEvent["type"]): string => {
+    if (t.has(type)) return t(type);
+    return type;
+  };
 
   // Merge external events (from simulation) into the feed
   useEffect(() => {
@@ -76,7 +74,7 @@ export function ActivityFeed({ externalEvents }: ActivityFeedProps) {
             id: `transfer-${log.transactionHash}-${tokenId}`,
             type: "registration",
             agentName,
-            description: `Registered as Agent #${tokenId}`,
+            description: t("registered", { id: String(tokenId) }),
             timestamp: new Date().toISOString(),
           },
           ...prev.slice(0, 29),
@@ -101,7 +99,31 @@ export function ActivityFeed({ externalEvents }: ActivityFeedProps) {
             id: `feedback-${log.transactionHash}-${agentId}`,
             type: "feedback",
             agentName,
-            description: `Received ${stars}-star feedback`,
+            description: t("receivedFeedback", { stars: String(stars) }),
+            timestamp: new Date().toISOString(),
+          },
+          ...prev.slice(0, 29),
+        ]);
+      }
+    },
+  });
+
+  // Watch for on-chain Validated events
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESSES.sepolia.validationRegistry,
+    abi: validationRegistryAbi,
+    eventName: "Validated",
+    onLogs(logs) {
+      for (const log of logs) {
+        const agentId = Number(log.args.agentId);
+        const agentName = AGENT_NAMES[agentId] || `Agent #${agentId}`;
+        const validationType = log.args.validationType || "unknown";
+        setEvents((prev) => [
+          {
+            id: `validation-${log.transactionHash}-${agentId}`,
+            type: "validation",
+            agentName,
+            description: t("validated", { type: validationType as string }),
             timestamp: new Date().toISOString(),
           },
           ...prev.slice(0, 29),
@@ -114,10 +136,10 @@ export function ActivityFeed({ externalEvents }: ActivityFeedProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Live Activity Feed</CardTitle>
+          <CardTitle className="text-lg">{t("title")}</CardTitle>
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-muted-foreground">Live</span>
+            <span className="text-xs text-muted-foreground">{t("live")}</span>
           </div>
         </div>
       </CardHeader>
@@ -143,7 +165,7 @@ export function ActivityFeed({ externalEvents }: ActivityFeedProps) {
                         {event.agentName}
                       </span>
                       <Badge variant="outline" className="text-[10px]">
-                        {event.type}
+                        {typeLabel(event.type)}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground truncate">

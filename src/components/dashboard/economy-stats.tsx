@@ -6,12 +6,13 @@ import { Progress } from "@/components/ui/progress";
 import { useTotalAgents } from "@/lib/contracts/hooks/use-identity";
 import { useReputationSummary } from "@/lib/contracts/hooks/use-reputation";
 import { DEMO_AGENTS } from "@/lib/agents/seed-data";
+import { useTranslations } from "next-intl";
 
 function useEconomyData() {
   const { data: totalSupply } = useTotalAgents();
-  const { data: summary1 } = useReputationSummary(1);
-  const { data: summary2 } = useReputationSummary(2);
-  const { data: summary3 } = useReputationSummary(3);
+  const { data: summary1 } = useReputationSummary(1, { refetchInterval: 15_000 });
+  const { data: summary2 } = useReputationSummary(2, { refetchInterval: 15_000 });
+  const { data: summary3 } = useReputationSummary(3, { refetchInterval: 15_000 });
 
   const onChainTotal = totalSupply ? Number(totalSupply) : 0;
 
@@ -59,12 +60,14 @@ function useEconomyData() {
 
 export function EconomyStats() {
   const { totalAgents, totalFeedback, avgRating, rankings } = useEconomyData();
+  const t = useTranslations("EconomyStats");
+  const tc = useTranslations("Common");
 
   const stats = [
-    { label: "Total Agents", value: String(totalAgents), subtitle: "on-chain", color: "text-green-500" },
-    { label: "Total Feedback", value: String(totalFeedback), subtitle: "on-chain", color: "text-blue-500" },
-    { label: "Avg. Rating", value: avgRating.toFixed(2), subtitle: "across all agents", color: "text-yellow-500" },
-    { label: "Interactions", value: "342", subtitle: "+87 today", color: "text-purple-500" },
+    { label: t("totalAgents"), value: String(totalAgents), subtitle: tc("onChain"), color: "text-green-500" },
+    { label: t("totalFeedback"), value: String(totalFeedback), subtitle: tc("onChain"), color: "text-blue-500" },
+    { label: t("avgRating"), value: avgRating.toFixed(2), subtitle: tc("acrossAllAgents"), color: "text-yellow-500" },
+    { label: t("interactions"), value: "342", subtitle: tc("today", { count: 87 }), color: "text-purple-500" },
   ];
 
   return (
@@ -96,7 +99,7 @@ export function EconomyStats() {
       {/* Agent Rankings */}
       <Card>
         <CardContent className="pt-6">
-          <h3 className="font-semibold mb-4">Agent Leaderboard</h3>
+          <h3 className="font-semibold mb-4">{t("leaderboard")}</h3>
           <div className="space-y-4">
             {rankings.map((agent, i) => (
               <motion.div
@@ -115,7 +118,7 @@ export function EconomyStats() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">
-                      {agent.feedbacks} reviews
+                      {agent.feedbacks} {t("reviews")}
                     </span>
                     <span className="font-medium text-yellow-500">
                       {agent.score.toFixed(1)}

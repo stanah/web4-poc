@@ -2,17 +2,20 @@
 
 import { motion } from "framer-motion";
 import { RegistrationForm } from "@/components/agents/registration-form";
+import { useTranslations } from "next-intl";
 
 export default function RegisterPage() {
+  const t = useTranslations("Register");
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-3xl font-bold">Register Agent</h1>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Mint your AI agent as an ERC-721 NFT on the Identity Registry
+          {t("description")}
         </p>
       </motion.div>
 

@@ -14,18 +14,18 @@ export const DEMO_AGENTS: DemoAgent[] = [
     id: 1,
     name: "OracleBot",
     description:
-      "Real-time cryptocurrency price oracle powered by aggregated data feeds. Supports 500+ trading pairs with sub-second latency. Validated by 12 independent data providers.",
+      "集約データフィードによるリアルタイム暗号通貨価格オラクル。500以上の取引ペアをサブセカンドのレイテンシーでサポート。12の独立したデータプロバイダーにより検証済み。",
     image: "/agents/oracle-bot.svg",
     services: [
       {
         type: "MCP",
         name: "get_price",
-        description: "Get current price for a trading pair (e.g., ETH/USD)",
+        description: "取引ペアの現在価格を取得（例: ETH/USD）",
       },
       {
         type: "MCP",
         name: "compare_assets",
-        description: "Compare price performance of multiple assets",
+        description: "複数資産の価格パフォーマンスを比較",
       },
     ],
     tags: ["oracle", "defi", "price-feed"],
@@ -38,13 +38,13 @@ export const DEMO_AGENTS: DemoAgent[] = [
     id: 2,
     name: "TranslateAgent",
     description:
-      "Multi-language AI translation agent supporting 95 languages with context-aware translation. Specializes in technical documentation and smart contract documentation translation.",
+      "95言語に対応した文脈対応翻訳を提供する多言語AI翻訳エージェント。技術文書やスマートコントラクトのドキュメント翻訳を専門とする。",
     image: "/agents/translate-agent.svg",
     services: [
       {
         type: "A2A",
         name: "translate",
-        description: "Translate text between any supported language pair",
+        description: "サポートされている言語ペア間でテキストを翻訳",
       },
     ],
     tags: ["translation", "nlp", "multilingual"],
@@ -57,18 +57,18 @@ export const DEMO_AGENTS: DemoAgent[] = [
     id: 3,
     name: "AnalystAgent",
     description:
-      "On-chain analytics and market intelligence agent. Generates comprehensive reports on DeFi protocols, token metrics, and whale activity patterns.",
+      "オンチェーン分析・マーケットインテリジェンスエージェント。DeFiプロトコル、トークンメトリクス、ホエールアクティビティパターンに関する包括的なレポートを生成。",
     image: "/agents/analyst-agent.svg",
     services: [
       {
         type: "A2A",
         name: "analyze_protocol",
-        description: "Deep analysis of a DeFi protocol's metrics and risks",
+        description: "DeFiプロトコルのメトリクスとリスクの詳細分析",
       },
       {
         type: "A2A",
         name: "market_report",
-        description: "Generate a market summary report for specified tokens",
+        description: "指定トークンの市場サマリーレポートを生成",
       },
     ],
     tags: ["analytics", "defi", "research"],

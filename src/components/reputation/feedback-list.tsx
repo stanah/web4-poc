@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllFeedback } from "@/lib/contracts/hooks/use-reputation";
 import { bytes32ToTag } from "@/lib/erc8004/types";
+import { useTranslations } from "next-intl";
+import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 const MOCK_FEEDBACK: Record<number, { from: string; rating: number; tags: string[]; timestamp: string }[]> = {
   1: [
@@ -57,6 +59,8 @@ interface FeedbackListProps {
 
 export function FeedbackList({ agentId }: FeedbackListProps) {
   const { data: onChainFeedback, isLoading } = useAllFeedback(agentId);
+  const t = useTranslations("FeedbackList");
+  const getTagLabel = useTagLabel();
 
   // Convert on-chain feedback to display format
   const feedbacks = onChainFeedback && Array.isArray(onChainFeedback) && onChainFeedback.length > 0
@@ -79,7 +83,7 @@ export function FeedbackList({ agentId }: FeedbackListProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Recent Feedback</CardTitle>
+        <CardTitle className="text-lg">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -91,7 +95,7 @@ export function FeedbackList({ agentId }: FeedbackListProps) {
             <div className="space-y-4">
               {feedbacks.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  No feedback yet
+                  {t("noFeedback")}
                 </p>
               ) : (
                 feedbacks.map((fb, i) => (
@@ -114,9 +118,9 @@ export function FeedbackList({ agentId }: FeedbackListProps) {
                           <Badge
                             key={tag}
                             variant="secondary"
-                            className="text-xs capitalize"
+                            className="text-xs"
                           >
-                            {tag}
+                            {getTagLabel(tag)}
                           </Badge>
                         ))}
                       </div>

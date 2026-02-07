@@ -2,19 +2,22 @@
 
 import { AgentCard } from "./agent-card";
 import type { DemoAgent } from "@/lib/agents/seed-data";
+import { useTranslations } from "next-intl";
 
 interface AgentGridProps {
   agents: DemoAgent[];
 }
 
 export function AgentGrid({ agents }: AgentGridProps) {
+  const t = useTranslations("AgentGrid");
+
   if (agents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="text-4xl mb-4">🔍</div>
-        <h3 className="text-lg font-medium">No agents found</h3>
+        <h3 className="text-lg font-medium">{t("noAgents")}</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Try adjusting your search or filters
+          {t("adjustSearch")}
         </p>
       </div>
     );

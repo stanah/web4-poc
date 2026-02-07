@@ -1,0 +1,178 @@
+{
+  "Common": {
+    "reviews": "件のレビュー",
+    "profile": "プロフィール",
+    "interact": "対話する",
+    "backToMarketplace": "マーケットプレイスに戻る",
+    "agentNotFound": "エージェントが見つかりません",
+    "agentNotFoundDesc": "ID #{id} のエージェントは見つかりませんでした",
+    "loading": "読み込み中...",
+    "live": "ライブ",
+    "onChain": "オンチェーン",
+    "acrossAllAgents": "全エージェント平均",
+    "today": "本日 +{count}件"
+  },
+  "Header": {
+    "marketplace": "マーケットプレイス",
+    "register": "エージェント登録",
+    "dashboard": "ダッシュボード"
+  },
+  "HomePage": {
+    "badge": "ERC-8004 — メインネット稼働中",
+    "title1": "トラストレス",
+    "titleHighlight": "AIエージェント",
+    "title2": "エコノミー",
+    "description": "AIエージェントをオンチェーンで登録、発見、対話、評価。ERC-8004のアイデンティティ、レピュテーション、バリデーションの3つのオンチェーンレジストリで構築。",
+    "exploreAgents": "エージェントを探す",
+    "registerAgent": "エージェント登録",
+    "watchTrade": "AIエージェントの取引を見る",
+    "featureIdentityTitle": "アイデンティティレジストリ",
+    "featureIdentityDesc": "AIエージェントをERC-721 NFTとして登録し、オンチェーンメタデータURIを付与。各エージェントは一意で検証可能なアイデンティティを取得します。",
+    "featureReputationTitle": "レピュテーションレジストリ",
+    "featureReputationDesc": "タグ付きフィードバックでエージェントを評価。レピュテーションスコアは完全にオンチェーンで改ざん不可能です。",
+    "featureValidationTitle": "バリデーションレジストリ",
+    "featureValidationDesc": "サードパーティのバリデーターがエージェントの能力を証明し、信頼のネットワークを構築します。",
+    "statAgents": "登録エージェント数",
+    "statFeedback": "フィードバック数",
+    "statRating": "平均評価",
+    "statChain": "チェーン"
+  },
+  "Marketplace": {
+    "title": "エージェントマーケットプレイス",
+    "description": "ERC-8004に登録されたAIエージェントを発見して対話しましょう",
+    "searchPlaceholder": "エージェントを検索...",
+    "loadingFromChain": "チェーンからエージェントを読み込み中..."
+  },
+  "Register": {
+    "title": "エージェント登録",
+    "description": "AIエージェントをERC-721 NFTとしてアイデンティティレジストリにミント"
+  },
+  "Dashboard": {
+    "title": "エコノミーダッシュボード",
+    "description": "ERC-8004 AIエージェントエコノミーのリアルタイム概要"
+  },
+  "EconomyStats": {
+    "totalAgents": "エージェント総数",
+    "totalFeedback": "フィードバック総数",
+    "avgRating": "平均評価",
+    "interactions": "インタラクション数",
+    "leaderboard": "エージェントランキング",
+    "reviews": "件のレビュー"
+  },
+  "SimulationPanel": {
+    "title": "A2Aエコノミーシミュレーション",
+    "startSimulation": "シミュレーション開始",
+    "restart": "再実行",
+    "stop": "停止",
+    "live": "ライブ",
+    "complete": "完了",
+    "error": "エラー",
+    "idleMessage": "AIエージェントのリアルタイムコラボレーションを観察しましょう。エージェント同士がサービスをリクエストし、オンチェーンフィードバックで支払います。"
+  },
+  "SimulationMessage": {
+    "request": "リクエスト",
+    "respond": "レスポンス",
+    "feedback": "ペイメント",
+    "viewOnEtherscan": "Etherscanで確認 ↗"
+  },
+  "ActivityFeed": {
+    "title": "ライブアクティビティフィード",
+    "live": "ライブ",
+    "registration": "登録",
+    "feedback": "フィードバック",
+    "interaction": "インタラクション",
+    "validation": "バリデーション",
+    "simulation": "シミュレーション",
+    "registered": "Agent #{id} として登録されました",
+    "receivedFeedback": "{stars}つ星のフィードバックを受け取りました",
+    "validated": "バリデーション完了: {type}"
+  },
+  "AgentProfile": {
+    "chatWithAgent": "エージェントと対話",
+    "services": "サービス",
+    "averageScore": "平均スコア",
+    "totalReviews": "レビュー総数",
+    "registered": "登録日",
+    "validations": "バリデーション",
+    "validator": "バリデーター"
+  },
+  "Interact": {
+    "chatWith": "{name} と対話",
+    "a2aInterface": "A2Aインタラクションインターフェース — Agent #{id}",
+    "viewProfile": "プロフィールを見る"
+  },
+  "ChatInterface": {
+    "welcome": "こんにちは！**{name}** です。{description} お手伝いできることはありますか？",
+    "placeholder": "メッセージを入力...",
+    "send": "送信",
+    "error": "応答の取得に失敗しました。AIのAPIキーが正しく設定されているかご確認ください。"
+  },
+  "FeedbackForm": {
+    "title": "フィードバックを送る",
+    "rating": "評価",
+    "tagsLabel": "タグ（最大2つ選択）",
+    "connectWallet": "フィードバックを送るにはウォレットを接続してください",
+    "confirmInWallet": "ウォレットで確認中...",
+    "submitting": "送信中...",
+    "submitButton": "フィードバックを送信（オンチェーン）",
+    "successMessage": "フィードバックをオンチェーンに送信しました！"
+  },
+  "FeedbackList": {
+    "title": "最近のフィードバック",
+    "noFeedback": "まだフィードバックはありません"
+  },
+  "ReputationBadge": {
+    "excellent": "優秀",
+    "good": "良好",
+    "average": "普通",
+    "poor": "低評価"
+  },
+  "AgentGrid": {
+    "noAgents": "エージェントが見つかりません",
+    "adjustSearch": "検索条件やフィルターを調整してみてください"
+  },
+  "RegistrationForm": {
+    "title": "新規エージェント登録",
+    "walletNotConnected": "ウォレット未接続",
+    "connectToRegister": "エージェントを登録するにはウォレットを接続してください",
+    "agentName": "エージェント名",
+    "namePlaceholder": "例: MyAwesomeBot",
+    "description": "説明",
+    "descriptionPlaceholder": "エージェントの機能を説明してください...",
+    "serviceType": "サービスタイプ",
+    "tags": "タグ",
+    "confirmInWallet": "ウォレットで確認中...",
+    "registering": "登録中...",
+    "registerButton": "エージェントを登録（ERC-721ミント）",
+    "successMessage": "エージェントが正常に登録されました！エージェントNFTがミントされました。"
+  },
+  "TxStatus": {
+    "waitingWallet": "ウォレットの確認を待っています...",
+    "confirming": "トランザクションを確認中...",
+    "viewOnEtherscan": "Etherscanで確認",
+    "confirmed": "確認済み",
+    "viewTransaction": "トランザクションを確認",
+    "error": "エラー"
+  },
+  "Tags": {
+    "all": "すべて",
+    "oracle": "オラクル",
+    "defi": "DeFi",
+    "nlp": "自然言語処理",
+    "translation": "翻訳",
+    "analytics": "アナリティクス",
+    "research": "リサーチ",
+    "price-feed": "価格フィード",
+    "automation": "自動化",
+    "security": "セキュリティ",
+    "multilingual": "多言語対応",
+    "accuracy": "正確性",
+    "speed": "速度",
+    "reliability": "信頼性",
+    "helpfulness": "有用性",
+    "creativity": "創造性"
+  },
+  "Scenarios": {
+    "price-analysis-translation": "クロスエージェント連携: 価格取得 → 分析 → 翻訳"
+  }
+}

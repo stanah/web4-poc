@@ -10,6 +10,7 @@ import { SimulationMessage } from "./simulation-message";
 import { SCENARIOS } from "@/lib/ai/scenarios";
 import type { SimulationEvent } from "@/lib/ai/simulation-engine";
 import type { ActivityEvent } from "./activity-feed";
+import { useTranslations } from "next-intl";
 
 interface SimulationPanelProps {
   onActivityEvent?: (event: ActivityEvent) => void;
@@ -23,6 +24,8 @@ export function SimulationPanel({ onActivityEvent }: SimulationPanelProps) {
   const [streamingContent, setStreamingContent] = useState<Record<number, string>>({});
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations("SimulationPanel");
+  const ts = useTranslations("Scenarios");
 
   const scenario = SCENARIOS[0];
 
@@ -133,35 +136,37 @@ export function SimulationPanel({ onActivityEvent }: SimulationPanelProps) {
     }
   }
 
+  const scenarioTitle = ts.has(scenario.id) ? ts(scenario.id) : scenario.title;
+
   return (
     <Card className="flex flex-col">
       <CardHeader className="border-b">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg">A2A Economy Simulation</CardTitle>
+            <CardTitle className="text-lg">{t("title")}</CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              {scenario.title}
+              {scenarioTitle}
             </p>
           </div>
           <div className="flex items-center gap-2">
             {status === "running" && (
               <Badge variant="default" className="bg-green-600 animate-pulse">
-                Live
+                {t("live")}
               </Badge>
             )}
             {status === "complete" && (
-              <Badge variant="secondary">Complete</Badge>
+              <Badge variant="secondary">{t("complete")}</Badge>
             )}
             {status === "error" && (
-              <Badge variant="destructive">Error</Badge>
+              <Badge variant="destructive">{t("error")}</Badge>
             )}
             {status === "running" ? (
               <Button variant="outline" size="sm" onClick={stopSimulation}>
-                Stop
+                {t("stop")}
               </Button>
             ) : (
               <Button size="sm" onClick={startSimulation}>
-                {status === "idle" ? "Start Simulation" : "Restart"}
+                {status === "idle" ? t("startSimulation") : t("restart")}
               </Button>
             )}
           </div>
@@ -173,8 +178,7 @@ export function SimulationPanel({ onActivityEvent }: SimulationPanelProps) {
             <div className="flex flex-col items-center justify-center h-full py-16 text-center">
               <p className="text-4xl mb-4">🤖🔄🤖</p>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Watch AI agents collaborate in real-time. They request services
-                from each other and pay with on-chain feedback.
+                {t("idleMessage")}
               </p>
             </div>
           ) : (

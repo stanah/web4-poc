@@ -13,11 +13,19 @@ import { FeedbackForm } from "@/components/reputation/feedback-form";
 import { FeedbackList } from "@/components/reputation/feedback-list";
 import { useReputationSummary } from "@/lib/contracts/hooks/use-reputation";
 import { useAgentTokenURI } from "@/lib/contracts/hooks/use-identity";
+import { useValidations, type Validation } from "@/lib/contracts/hooks/use-validation";
+import { useTranslations } from "next-intl";
+import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 function AgentProfile({ agentId }: { agentId: number }) {
   const seedAgent = getAgentById(agentId);
   const { data: summary } = useReputationSummary(agentId);
   const { data: tokenURI } = useAgentTokenURI(BigInt(agentId));
+  const { data: validationsData } = useValidations(agentId);
+  const validations = (validationsData as Validation[] | undefined) || [];
+  const t = useTranslations("AgentProfile");
+  const tc = useTranslations("Common");
+  const getTagLabel = useTagLabel();
 
   // Use on-chain reputation if available, otherwise seed data
   const onChainScore = summary
@@ -33,12 +41,12 @@ function AgentProfile({ agentId }: { agentId: number }) {
   if (!agent) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <h2 className="text-2xl font-bold">Agent Not Found</h2>
+        <h2 className="text-2xl font-bold">{tc("agentNotFound")}</h2>
         <p className="text-muted-foreground mt-2">
-          No agent found with ID #{agentId}
+          {tc("agentNotFoundDesc", { id: String(agentId) })}
         </p>
         <Button asChild className="mt-4">
-          <Link href="/marketplace">Back to Marketplace</Link>
+          <Link href="/marketplace">{tc("backToMarketplace")}</Link>
         </Button>
       </div>
     );
@@ -67,7 +75,7 @@ function AgentProfile({ agentId }: { agentId: number }) {
           <div className="flex flex-wrap gap-2 mt-2">
             {agent.tags.map((tag) => (
               <Badge key={tag} variant="secondary">
-                {tag}
+                {getTagLabel(tag)}
               </Badge>
             ))}
           </div>
@@ -78,7 +86,7 @@ function AgentProfile({ agentId }: { agentId: number }) {
           )}
         </div>
         <Button asChild>
-          <Link href={`/interact/${agent.id}`}>Chat with Agent</Link>
+          <Link href={`/interact/${agent.id}`}>{t("chatWithAgent")}</Link>
         </Button>
       </motion.div>
 
@@ -92,7 +100,7 @@ function AgentProfile({ agentId }: { agentId: number }) {
       >
         <Card>
           <CardHeader>
-            <CardTitle>Services</CardTitle>
+            <CardTitle>{t("services")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -127,13 +135,13 @@ function AgentProfile({ agentId }: { agentId: number }) {
             <div className="text-3xl font-bold">
               {displayScore.toFixed(1)}
             </div>
-            <p className="text-sm text-muted-foreground">Average Score</p>
+            <p className="text-sm text-muted-foreground">{t("averageScore")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
             <div className="text-3xl font-bold">{displayFeedbackCount}</div>
-            <p className="text-sm text-muted-foreground">Total Reviews</p>
+            <p className="text-sm text-muted-foreground">{t("totalReviews")}</p>
           </CardContent>
         </Card>
         <Card>
@@ -141,10 +149,47 @@ function AgentProfile({ agentId }: { agentId: number }) {
             <div className="text-3xl font-bold">
               {new Date(agent.registeredAt).toLocaleDateString()}
             </div>
-            <p className="text-sm text-muted-foreground">Registered</p>
+            <p className="text-sm text-muted-foreground">{t("registered")}</p>
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Validations */}
+      {validations.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("validations")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {validations.map((v, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-4 p-3 rounded-lg bg-muted/50"
+                  >
+                    <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/30">
+                      {v.validationType}
+                    </Badge>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-mono text-muted-foreground truncate">
+                        {t("validator")}: {v.validator}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(Number(v.timestamp) * 1000).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Feedback */}
       <motion.div

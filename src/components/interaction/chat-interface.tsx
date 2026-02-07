@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { MessageBubble } from "./message-bubble";
 import type { DemoAgent } from "@/lib/agents/seed-data";
+import { useTranslations } from "next-intl";
 
 interface ChatInterfaceProps {
   agent: DemoAgent;
@@ -18,6 +19,7 @@ interface ChatInterfaceProps {
 export function ChatInterface({ agent }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations("ChatInterface");
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -79,7 +81,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
               <MessageBubble
                 role="assistant"
                 agentName={agent.name}
-                content={`Hello! I'm **${agent.name}**. ${agent.description.split(".")[0]}. How can I help you?`}
+                content={t("welcome", { name: agent.name, description: agent.description.split("。")[0] || agent.description.split(".")[0] })}
               />
             )}
             {messages.map((msg) => (
@@ -95,7 +97,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
             {error && (
               <div className="flex justify-start">
                 <div className="bg-destructive/10 text-destructive rounded-2xl px-4 py-3 text-sm">
-                  Failed to get response. Please check that the AI API key is configured correctly.
+                  {t("error")}
                 </div>
               </div>
             )}
@@ -122,14 +124,14 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
         <div className="border-t p-4">
           <div className="flex gap-2">
             <Input
-              placeholder="Type a message..."
+              placeholder={t("placeholder")}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
             />
             <Button onClick={handleSend} disabled={!input.trim() || isLoading}>
-              Send
+              {t("send")}
             </Button>
           </div>
         </div>

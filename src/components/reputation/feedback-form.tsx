@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useGiveFeedback } from "@/lib/contracts/hooks/use-reputation";
 import { FEEDBACK_TAGS, type FeedbackTag } from "@/lib/erc8004/types";
 import { TxStatus } from "@/components/web3/tx-status";
+import { useTranslations } from "next-intl";
+import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 interface FeedbackFormProps {
   agentId: number;
@@ -17,6 +19,8 @@ export function FeedbackForm({ agentId }: FeedbackFormProps) {
   const { isConnected } = useAccount();
   const { giveFeedback, hash, isPending, isConfirming, isSuccess, error } =
     useGiveFeedback();
+  const t = useTranslations("FeedbackForm");
+  const getTagLabel = useTagLabel();
 
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -42,7 +46,7 @@ export function FeedbackForm({ agentId }: FeedbackFormProps) {
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center justify-center py-8">
           <p className="text-sm text-muted-foreground">
-            Connect wallet to leave feedback
+            {t("connectWallet")}
           </p>
         </CardContent>
       </Card>
@@ -52,12 +56,12 @@ export function FeedbackForm({ agentId }: FeedbackFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Leave Feedback</CardTitle>
+        <CardTitle className="text-lg">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Star Rating */}
         <div>
-          <p className="text-sm text-muted-foreground mb-2">Rating</p>
+          <p className="text-sm text-muted-foreground mb-2">{t("rating")}</p>
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -89,17 +93,17 @@ export function FeedbackForm({ agentId }: FeedbackFormProps) {
         {/* Tags */}
         <div>
           <p className="text-sm text-muted-foreground mb-2">
-            Tags (select up to 2)
+            {t("tagsLabel")}
           </p>
           <div className="flex flex-wrap gap-2">
             {(Object.keys(FEEDBACK_TAGS) as FeedbackTag[]).map((tag) => (
               <Badge
                 key={tag}
                 variant={selectedTags.includes(tag) ? "default" : "outline"}
-                className="cursor-pointer capitalize"
+                className="cursor-pointer"
                 onClick={() => toggleTag(tag)}
               >
-                {tag}
+                {getTagLabel(tag)}
               </Badge>
             ))}
           </div>
@@ -111,10 +115,10 @@ export function FeedbackForm({ agentId }: FeedbackFormProps) {
           disabled={rating === 0 || isPending || isConfirming}
         >
           {isPending
-            ? "Confirm in Wallet..."
+            ? t("confirmInWallet")
             : isConfirming
-              ? "Submitting..."
-              : "Submit Feedback (On-chain)"}
+              ? t("submitting")
+              : t("submitButton")}
         </Button>
 
         <TxStatus
@@ -123,7 +127,7 @@ export function FeedbackForm({ agentId }: FeedbackFormProps) {
           isConfirming={isConfirming}
           isSuccess={isSuccess}
           error={error}
-          successMessage="Feedback submitted on-chain!"
+          successMessage={t("successMessage")}
         />
       </CardContent>
     </Card>

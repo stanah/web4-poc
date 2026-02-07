@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRegisterAgent } from "@/lib/contracts/hooks/use-identity";
 import { TxStatus } from "@/components/web3/tx-status";
+import { useTranslations } from "next-intl";
+import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 const AVAILABLE_TAGS = [
   "oracle",
@@ -28,6 +30,8 @@ export function RegistrationForm() {
   const { isConnected } = useAccount();
   const { register, hash, isPending, isConfirming, isSuccess, error } =
     useRegisterAgent();
+  const t = useTranslations("RegistrationForm");
+  const getTagLabel = useTagLabel();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -53,9 +57,9 @@ export function RegistrationForm() {
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center justify-center py-16">
           <div className="text-4xl mb-4">🔗</div>
-          <h3 className="text-lg font-medium">Wallet Not Connected</h3>
+          <h3 className="text-lg font-medium">{t("walletNotConnected")}</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Connect your wallet to register an agent
+            {t("connectToRegister")}
           </p>
         </CardContent>
       </Card>
@@ -65,15 +69,15 @@ export function RegistrationForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Register New Agent</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name">Agent Name</Label>
+            <Label htmlFor="name">{t("agentName")}</Label>
             <Input
               id="name"
-              placeholder="e.g., MyAwesomeBot"
+              placeholder={t("namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -81,10 +85,10 @@ export function RegistrationForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t("description")}</Label>
             <Textarea
               id="description"
-              placeholder="Describe what your agent does..."
+              placeholder={t("descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
@@ -93,7 +97,7 @@ export function RegistrationForm() {
           </div>
 
           <div className="space-y-2">
-            <Label>Service Type</Label>
+            <Label>{t("serviceType")}</Label>
             <div className="flex gap-2">
               {(["MCP", "A2A"] as const).map((type) => (
                 <Button
@@ -110,7 +114,7 @@ export function RegistrationForm() {
           </div>
 
           <div className="space-y-2">
-            <Label>Tags</Label>
+            <Label>{t("tags")}</Label>
             <div className="flex flex-wrap gap-2">
               {AVAILABLE_TAGS.map((tag) => (
                 <Badge
@@ -119,7 +123,7 @@ export function RegistrationForm() {
                   className="cursor-pointer"
                   onClick={() => toggleTag(tag)}
                 >
-                  {tag}
+                  {getTagLabel(tag)}
                 </Badge>
               ))}
             </div>
@@ -131,10 +135,10 @@ export function RegistrationForm() {
             disabled={isPending || isConfirming || !name || !description}
           >
             {isPending
-              ? "Confirm in Wallet..."
+              ? t("confirmInWallet")
               : isConfirming
-                ? "Registering..."
-                : "Register Agent (Mint ERC-721)"}
+                ? t("registering")
+                : t("registerButton")}
           </Button>
 
           <TxStatus
@@ -143,7 +147,7 @@ export function RegistrationForm() {
             isConfirming={isConfirming}
             isSuccess={isSuccess}
             error={error}
-            successMessage="Agent registered successfully! Your agent NFT has been minted."
+            successMessage={t("successMessage")}
           />
         </form>
       </CardContent>

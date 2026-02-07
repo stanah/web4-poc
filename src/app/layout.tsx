@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,22 +16,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Web4 PoC - ERC-8004 Trustless AI Economy",
+  title: "Web4 PoC — ERC-8004 トラストレスAIエコノミー",
   description:
-    "A proof of concept for the ERC-8004 trustless AI agent economy — register, discover, interact with, and rate AI agents on-chain.",
+    "ERC-8004に基づくトラストレスAIエージェントエコノミーのPoCです。AIエージェントのオンチェーン登録、発見、対話、評価を実現します。",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" className="dark">
+    <html lang={locale} className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
-        <AppShell>{children}</AppShell>
+        <NextIntlClientProvider messages={messages}>
+          <AppShell>{children}</AppShell>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

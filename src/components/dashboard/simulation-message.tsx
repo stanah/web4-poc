@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import type { SimulationEvent } from "@/lib/ai/simulation-engine";
+import { useTranslations } from "next-intl";
+import { useTagLabel } from "@/lib/i18n/tag-utils";
 
 const AGENT_COLORS: Record<string, string> = {
   OracleBot: "text-amber-500",
@@ -10,10 +12,10 @@ const AGENT_COLORS: Record<string, string> = {
   AnalystAgent: "text-emerald-500",
 };
 
-const ACTION_STYLES: Record<string, { bg: string; label: string }> = {
-  request: { bg: "bg-blue-500/10 border-blue-500/20", label: "Request" },
-  respond: { bg: "bg-emerald-500/10 border-emerald-500/20", label: "Response" },
-  feedback: { bg: "bg-yellow-500/10 border-yellow-500/20", label: "Payment" },
+const ACTION_BG: Record<string, string> = {
+  request: "bg-blue-500/10 border-blue-500/20",
+  respond: "bg-emerald-500/10 border-emerald-500/20",
+  feedback: "bg-yellow-500/10 border-yellow-500/20",
 };
 
 interface SimulationMessageProps {
@@ -21,7 +23,11 @@ interface SimulationMessageProps {
 }
 
 export function SimulationMessage({ event }: SimulationMessageProps) {
-  const style = ACTION_STYLES[event.action] || ACTION_STYLES.request;
+  const t = useTranslations("SimulationMessage");
+  const getTagLabel = useTagLabel();
+  const bg = ACTION_BG[event.action] || ACTION_BG.request;
+
+  const actionLabel = t.has(event.action) ? t(event.action) : event.action;
 
   if (event.action === "feedback") {
     return (
@@ -48,19 +54,29 @@ export function SimulationMessage({ event }: SimulationMessageProps) {
             <div className="flex gap-1 mt-1">
               {event.feedbackTags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="text-[10px]">
-                  {tag}
+                  {getTagLabel(tag)}
                 </Badge>
               ))}
             </div>
           )}
         </div>
+        {event.txHash && (
+          <a
+            href={`https://sepolia.etherscan.io/tx/${event.txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-yellow-500 hover:text-yellow-400 underline whitespace-nowrap"
+          >
+            {t("viewOnEtherscan")}
+          </a>
+        )}
       </motion.div>
     );
   }
 
   return (
     <motion.div
-      className={`rounded-lg border p-4 ${style.bg}`}
+      className={`rounded-lg border p-4 ${bg}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -75,7 +91,7 @@ export function SimulationMessage({ event }: SimulationMessageProps) {
           </span>
         </div>
         <Badge variant="outline" className="text-[10px]">
-          {style.label}
+          {actionLabel}
         </Badge>
       </div>
       {event.content && (
