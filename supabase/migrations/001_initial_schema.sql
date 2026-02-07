@@ -145,16 +145,16 @@ ALTER TABLE validations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reputation_summaries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE indexer_state ENABLE ROW LEVEL SECURITY;
 
--- Public read access for agents, feedback, validations, reputation
-CREATE POLICY "Public read agents" ON agents FOR SELECT USING (true);
-CREATE POLICY "Public read feedback" ON feedback FOR SELECT USING (true);
-CREATE POLICY "Public read validations" ON validations FOR SELECT USING (true);
-CREATE POLICY "Public read reputation" ON reputation_summaries FOR SELECT USING (true);
+-- Public read access for agents, feedback, validations, reputation (anon + authenticated)
+CREATE POLICY "Public read agents" ON agents FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public read feedback" ON feedback FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public read validations" ON validations FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public read reputation" ON reputation_summaries FOR SELECT TO anon, authenticated USING (true);
 
--- Service role (indexer) can insert/update all tables
-CREATE POLICY "Service insert agents" ON agents FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service update agents" ON agents FOR UPDATE USING (true);
-CREATE POLICY "Service insert feedback" ON feedback FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service insert validations" ON validations FOR INSERT WITH CHECK (true);
-CREATE POLICY "Service manage reputation" ON reputation_summaries FOR ALL USING (true);
-CREATE POLICY "Service manage indexer_state" ON indexer_state FOR ALL USING (true);
+-- Service role (indexer) can insert/update all tables — restrict to service_role only
+CREATE POLICY "Service insert agents" ON agents FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service update agents" ON agents FOR UPDATE TO service_role USING (true);
+CREATE POLICY "Service insert feedback" ON feedback FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service insert validations" ON validations FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "Service manage reputation" ON reputation_summaries FOR ALL TO service_role USING (true);
+CREATE POLICY "Service manage indexer_state" ON indexer_state FOR ALL TO service_role USING (true);

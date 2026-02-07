@@ -5,6 +5,8 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
+  useRef,
   type ReactNode,
 } from "react";
 import { useAccount } from "wagmi";
@@ -34,12 +36,23 @@ const OpenfortContext = createContext<OpenfortContextValue | null>(null);
 
 export function OpenfortProvider({ children }: { children: ReactNode }) {
   const { address } = useAccount();
+  const prevAddressRef = useRef(address);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [smartAccountAddress, setSmartAccountAddress] = useState<string | null>(
     null,
   );
   const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset Openfort state when wallet address changes (switch/disconnect)
+  useEffect(() => {
+    if (prevAddressRef.current !== address) {
+      prevAddressRef.current = address;
+      setPlayerId(null);
+      setSmartAccountAddress(null);
+      setError(null);
+    }
+  }, [address]);
 
   const initSmartAccount = useCallback(async () => {
     if (!address) {

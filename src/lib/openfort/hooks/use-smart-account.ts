@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAccount } from "wagmi";
 
 interface SmartAccountState {
@@ -16,12 +16,26 @@ interface SmartAccountState {
  */
 export function useSmartAccount() {
   const { address } = useAccount();
+  const prevAddressRef = useRef(address);
   const [state, setState] = useState<SmartAccountState>({
     playerId: null,
     smartAccountAddress: null,
     isLoading: false,
     error: null,
   });
+
+  // Reset state when wallet address changes (switch/disconnect)
+  useEffect(() => {
+    if (prevAddressRef.current !== address) {
+      prevAddressRef.current = address;
+      setState({
+        playerId: null,
+        smartAccountAddress: null,
+        isLoading: false,
+        error: null,
+      });
+    }
+  }, [address]);
 
   const initSmartAccount = useCallback(async () => {
     if (!address) {

@@ -41,10 +41,18 @@ ponder.on("IdentityRegistry:Transfer", async ({ event, context }) => {
         blockNumber: Number(event.block.number),
       });
   } else {
-    // Ownership transfer
+    // Ownership transfer — use upsert in case the indexer started after mint
     await context.db
-      .update(agent, { tokenId: Number(tokenId) })
-      .set({
+      .insert(agent)
+      .values({
+        tokenId: Number(tokenId),
+        owner: to,
+        metadataUri: "",
+        blockNumber: Number(event.block.number),
+        txHash: event.transaction.hash,
+        timestamp: Number(event.block.timestamp),
+      })
+      .onConflictDoUpdate({
         owner: to,
         blockNumber: Number(event.block.number),
       });

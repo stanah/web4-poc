@@ -5,11 +5,20 @@ import { getOrCreatePlayer } from "@/lib/openfort/server";
  * POST /api/openfort/player
  *
  * Create or retrieve an Openfort player (smart account) for a wallet address.
- * Requires a valid Ethereum address format as proof of intent.
+ * Requires a valid Ethereum address format and API secret as proof of authorization.
  * Body: { walletAddress: string }
  */
 export async function POST(request: Request) {
   try {
+    // Verify the request comes from our own frontend via shared secret
+    const apiSecret = process.env.OPENFORT_API_ROUTE_SECRET;
+    if (apiSecret) {
+      const authHeader = request.headers.get("x-api-secret");
+      if (authHeader !== apiSecret) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
     const { walletAddress } = await request.json();
 
     if (!walletAddress || typeof walletAddress !== "string") {
@@ -36,7 +45,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[openfort/player] Error:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal error" },
+      { error: "Failed to create or retrieve player" },
       { status: 500 },
     );
   }

@@ -5,6 +5,7 @@
  */
 
 const OPENFORT_API_BASE = "https://api.openfort.xyz";
+const FETCH_TIMEOUT_MS = 10_000;
 
 function getHeaders() {
   const secretKey = process.env.OPENFORT_SECRET_KEY;
@@ -50,6 +51,7 @@ export async function createTransactionIntent(
   const res = await fetch(`${OPENFORT_API_BASE}/v1/transaction_intents`, {
     method: "POST",
     headers: getHeaders(),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     body: JSON.stringify({
       player: request.player,
       chain_id: request.chainId,
@@ -80,24 +82,29 @@ export async function getOrCreatePlayer(
   // Search for existing player by external wallet
   const searchRes = await fetch(
     `${OPENFORT_API_BASE}/v1/players?external_wallet=${walletAddress}`,
-    { headers: getHeaders() },
+    { headers: getHeaders(), signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
   );
 
-  if (searchRes.ok) {
-    const searchData = await searchRes.json();
-    if (searchData.data?.length > 0) {
-      const player = searchData.data[0];
-      return {
-        id: player.id,
-        smartAccountAddress: player.accounts?.[0]?.address ?? "",
-      };
-    }
+  if (!searchRes.ok) {
+    // Don't silently fall through to player creation on search API errors
+    // (e.g. auth failure, server error) — this could create duplicate players
+    throw new Error(`Openfort search API error: ${searchRes.status}`);
+  }
+
+  const searchData = await searchRes.json();
+  if (searchData.data?.length > 0) {
+    const player = searchData.data[0];
+    return {
+      id: player.id,
+      smartAccountAddress: player.accounts?.[0]?.address ?? "",
+    };
   }
 
   // Create new player
   const createRes = await fetch(`${OPENFORT_API_BASE}/v1/players`, {
     method: "POST",
     headers: getHeaders(),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     body: JSON.stringify({
       name: name ?? `web4-${walletAddress.slice(0, 8)}`,
       external_wallet: walletAddress,

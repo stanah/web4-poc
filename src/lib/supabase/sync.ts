@@ -84,7 +84,13 @@ async function parseMetadata(uri: string): Promise<AgentMetadata | null> {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       try {
-        const res = await fetch(uri, { signal: controller.signal });
+        // Use redirect: "manual" to prevent SSRF bypass via redirect to internal IPs
+        const res = await fetch(uri, {
+          signal: controller.signal,
+          redirect: "manual",
+        });
+        // Reject redirects — a malicious URI could redirect to internal endpoints
+        if (res.status >= 300 && res.status < 400) return null;
         if (!res.ok) return null;
         return await res.json();
       } finally {

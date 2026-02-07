@@ -28,6 +28,15 @@ const ALLOWED_FUNCTIONS: Record<string, string[]> = {
  */
 export async function POST(request: Request) {
   try {
+    // Verify the request comes from our own frontend via shared secret
+    const apiSecret = process.env.OPENFORT_API_ROUTE_SECRET;
+    if (apiSecret) {
+      const authHeader = request.headers.get("x-api-secret");
+      if (authHeader !== apiSecret) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
     const body = await request.json();
     const { playerId, interactions } = body;
 
@@ -81,7 +90,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[openfort/transaction] Error:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal error" },
+      { error: "Failed to create transaction intent" },
       { status: 500 },
     );
   }

@@ -118,21 +118,33 @@ export async function GET(request: Request) {
   const tag = searchParams.get("tag") ?? undefined;
   const query = searchParams.get("q") ?? undefined;
 
-  // Try Supabase first (fast indexed queries)
-  const supabaseAgents = await getAgentsFromSupabase(tag, query);
-  if (supabaseAgents) {
-    return NextResponse.json({
-      agents: supabaseAgents,
-      total: supabaseAgents.length,
-      source: "supabase",
-    });
+  try {
+    // Try Supabase first (fast indexed queries)
+    const supabaseAgents = await getAgentsFromSupabase(tag, query);
+    if (supabaseAgents) {
+      return NextResponse.json({
+        agents: supabaseAgents,
+        total: supabaseAgents.length,
+        source: "supabase",
+      });
+    }
+  } catch (err) {
+    console.error("[discover] Supabase query failed, falling back to on-chain:", err);
   }
 
-  // Fallback to on-chain reads
-  const agents = await getAgentsFromChain(tag, query);
-  return NextResponse.json({
-    agents,
-    total: agents.length,
-    source: "onchain",
-  });
+  try {
+    // Fallback to on-chain reads
+    const agents = await getAgentsFromChain(tag, query);
+    return NextResponse.json({
+      agents,
+      total: agents.length,
+      source: "onchain",
+    });
+  } catch (err) {
+    console.error("[discover] On-chain fallback also failed:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch agents" },
+      { status: 500 },
+    );
+  }
 }
