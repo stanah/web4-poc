@@ -1,5 +1,5 @@
-import { ponder } from "@/generated";
-import { agent } from "../ponder.schema";
+import { ponder } from "ponder:registry";
+import { agent } from "ponder:schema";
 
 /**
  * Index IdentityRegistry Transfer events.

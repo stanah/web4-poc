@@ -1,5 +1,5 @@
-import { ponder } from "@/generated";
-import { feedbackEntry } from "../ponder.schema";
+import { ponder } from "ponder:registry";
+import { feedbackEntry } from "ponder:schema";
 
 /**
  * Index ReputationRegistry FeedbackGiven events.

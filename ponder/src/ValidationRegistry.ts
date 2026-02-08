@@ -1,5 +1,5 @@
-import { ponder } from "@/generated";
-import { validation } from "../ponder.schema";
+import { ponder } from "ponder:registry";
+import { validation } from "ponder:schema";
 
 /**
  * Index ValidationRegistry Validated events.

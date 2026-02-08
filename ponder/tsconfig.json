@@ -11,7 +11,9 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "ponder:registry": ["./node_modules/ponder/dist/index.d.ts"],
+      "ponder:schema": ["./ponder.schema.ts"],
+      "ponder:api": ["./node_modules/ponder/dist/index.d.ts"]
     }
   },
   "include": ["src/**/*.ts", "ponder.config.ts", "ponder.schema.ts"]

@@ -1,5 +1,5 @@
-import { createConfig } from "@ponder/core";
-import { http } from "viem";
+import { createConfig } from "ponder";
+import type { Abi } from "viem";
 
 import IdentityRegistryAbi from "./abis/IdentityRegistry.json";
 import ReputationRegistryAbi from "./abis/ReputationRegistry.json";
@@ -14,28 +14,28 @@ import ValidationRegistryAbi from "./abis/ValidationRegistry.json";
  * - ValidationRegistry: Third-party validations (Validated events)
  */
 export default createConfig({
-  networks: {
+  chains: {
     sepolia: {
-      chainId: 11155111,
-      transport: http(process.env.PONDER_RPC_URL_SEPOLIA ?? "https://rpc.sepolia.org"),
+      id: 11155111,
+      rpc: process.env.PONDER_RPC_URL_SEPOLIA ?? "https://rpc.sepolia.org",
     },
   },
   contracts: {
     IdentityRegistry: {
-      network: "sepolia",
-      abi: IdentityRegistryAbi,
+      chain: "sepolia",
+      abi: IdentityRegistryAbi as Abi,
       address: "0x8004A818BFB912233c491871b3d84c89A494BD9e",
       startBlock: 7_000_000,
     },
     ReputationRegistry: {
-      network: "sepolia",
-      abi: ReputationRegistryAbi,
+      chain: "sepolia",
+      abi: ReputationRegistryAbi as Abi,
       address: "0x8004B663056A597Dffe9eCcC1965A193B7388713",
       startBlock: 7_000_000,
     },
     ValidationRegistry: {
-      network: "sepolia",
-      abi: ValidationRegistryAbi,
+      chain: "sepolia",
+      abi: ValidationRegistryAbi as Abi,
       address: "0x8004Cb1BF31DAf7788923b405b754f57acEB4272",
       startBlock: 7_000_000,
     },

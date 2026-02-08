@@ -1,4 +1,4 @@
-import { onchainTable, index } from "@ponder/core";
+import { onchainTable, index } from "ponder";
 
 /**
  * Ponder schema for indexed ERC-8004 contract data.

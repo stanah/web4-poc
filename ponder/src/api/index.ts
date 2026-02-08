@@ -1,22 +1,23 @@
-import { ponder } from "@/generated";
-import { agent, feedbackEntry, validation } from "../../ponder.schema";
-import { desc, eq, sql } from "@ponder/core";
+import { Hono } from "hono";
+import { db } from "ponder:api";
+import { agent, feedbackEntry, validation } from "ponder:schema";
+import { desc, eq, sql } from "ponder";
 
 /**
- * Ponder GraphQL API is auto-generated.
- * These additional REST endpoints provide custom query patterns.
+ * Ponder REST API endpoints for ERC-8004 indexed data.
  */
+const app = new Hono();
 
 // GET /api/agents - List all indexed agents
-ponder.get("/api/agents", async (c) => {
-  const results = await c.db.select().from(agent).orderBy(desc(agent.tokenId));
+app.get("/api/agents", async (c) => {
+  const results = await db.select().from(agent).orderBy(desc(agent.tokenId));
   return c.json({ agents: results, total: results.length });
 });
 
 // GET /api/agents/:tokenId - Get a specific agent
-ponder.get("/api/agents/:tokenId", async (c) => {
+app.get("/api/agents/:tokenId", async (c) => {
   const tokenId = parseInt(c.req.param("tokenId"));
-  const results = await c.db
+  const results = await db
     .select()
     .from(agent)
     .where(eq(agent.tokenId, tokenId))
@@ -30,12 +31,12 @@ ponder.get("/api/agents/:tokenId", async (c) => {
 });
 
 // GET /api/feedback/:agentId - Get feedback for an agent
-ponder.get("/api/feedback/:agentId", async (c) => {
+app.get("/api/feedback/:agentId", async (c) => {
   const agentId = parseInt(c.req.param("agentId"));
   const limit = parseInt(c.req.query("limit") ?? "50");
   const offset = parseInt(c.req.query("offset") ?? "0");
 
-  const results = await c.db
+  const results = await db
     .select()
     .from(feedbackEntry)
     .where(eq(feedbackEntry.agentId, agentId))
@@ -47,10 +48,10 @@ ponder.get("/api/feedback/:agentId", async (c) => {
 });
 
 // GET /api/feedback/:agentId/summary - Get aggregated feedback summary
-ponder.get("/api/feedback/:agentId/summary", async (c) => {
+app.get("/api/feedback/:agentId/summary", async (c) => {
   const agentId = parseInt(c.req.param("agentId"));
 
-  const results = await c.db
+  const results = await db
     .select({
       totalFeedback: sql<number>`count(*)`,
       averageScore: sql<number>`coalesce(avg(${feedbackEntry.value} / power(10, ${feedbackEntry.decimals})), 0)`,
@@ -68,10 +69,10 @@ ponder.get("/api/feedback/:agentId/summary", async (c) => {
 });
 
 // GET /api/validations/:agentId - Get validations for an agent
-ponder.get("/api/validations/:agentId", async (c) => {
+app.get("/api/validations/:agentId", async (c) => {
   const agentId = parseInt(c.req.param("agentId"));
 
-  const results = await c.db
+  const results = await db
     .select()
     .from(validation)
     .where(eq(validation.agentId, agentId))
@@ -79,3 +80,5 @@ ponder.get("/api/validations/:agentId", async (c) => {
 
   return c.json({ validations: results, total: results.length });
 });
+
+export default app;

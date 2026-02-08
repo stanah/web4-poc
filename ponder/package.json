@@ -9,7 +9,7 @@
     "codegen": "ponder codegen"
   },
   "dependencies": {
-    "@ponder/core": "^0.8.0",
+    "ponder": "^0.16.3",
     "@supabase/supabase-js": "^2.95.3",
     "hono": "^4.0.0",
     "viem": "^2.45.1"
