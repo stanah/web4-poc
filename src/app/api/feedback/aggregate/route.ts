@@ -64,25 +64,92 @@ async function getFromSupabase(agentId?: number) {
  */
 async function getOnChainSummary(agentId: number) {
   const client = getPublicClient();
-  const summary = await client.readContract({
-    address: CONTRACT_ADDRESSES.sepolia.reputationRegistry,
-    abi: reputationRegistryAbi,
-    functionName: "getSummary",
-    args: [BigInt(agentId), [], "", ""],
-  });
+  try {
+    const summary = await client.readContract({
+      address: CONTRACT_ADDRESSES.sepolia.reputationRegistry,
+      abi: reputationRegistryAbi,
+      functionName: "getSummary",
+      args: [BigInt(agentId), [], "", ""],
+    });
 
-  const { totalFeedback, averageValue, averageDecimals } = summary as {
-    totalFeedback: bigint;
-    averageValue: bigint;
-    averageDecimals: number;
-  };
+    const { totalFeedback, averageValue, averageDecimals } = summary as {
+      totalFeedback: bigint;
+      averageValue: bigint;
+      averageDecimals: number;
+    };
 
-  return {
-    totalFeedback: Number(totalFeedback),
-    averageScore:
-      Number(averageValue) / Math.pow(10, averageDecimals) || 0,
-    topTags: ["accuracy", "speed"],
-  };
+    return {
+      totalFeedback: Number(totalFeedback),
+      averageScore:
+        Number(averageValue) / Math.pow(10, averageDecimals) || 0,
+      topTags: ["accuracy", "speed"],
+    };
+  } catch {
+    return { totalFeedback: 0, averageScore: 0, topTags: [] };
+  }
+}
+
+/**
+ * Try Ponder indexer API for feedback summaries.
+ */
+async function getFromPonder(agentId?: number) {
+  const ponderUrl = process.env.PONDER_API_URL || "http://localhost:42069";
+
+  if (agentId) {
+    try {
+      const res = await fetch(`${ponderUrl}/api/feedback/${agentId}/summary`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return {
+        totalFeedback: Number(data.totalFeedback ?? 0),
+        averageScore: Number(data.averageScore ?? 0),
+        topTags: [] as string[],
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // Get all agents from Ponder, then fetch summaries
+  try {
+    const agentsRes = await fetch(`${ponderUrl}/api/agents`, {
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!agentsRes.ok) return null;
+
+    const agentsData = await agentsRes.json();
+    const agents = agentsData.agents as { tokenId: number }[];
+    if (!agents || agents.length === 0) return null;
+
+    // Cap at 100 to prevent excessive requests
+    const capped = agents.slice(0, 100);
+    const results: Record<number, { totalFeedback: number; averageScore: number; topTags: string[] }> = {};
+
+    await Promise.all(
+      capped.map(async (a) => {
+        try {
+          const res = await fetch(`${ponderUrl}/api/feedback/${a.tokenId}/summary`, {
+            signal: AbortSignal.timeout(5000),
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          results[a.tokenId] = {
+            totalFeedback: Number(data.totalFeedback ?? 0),
+            averageScore: Number(data.averageScore ?? 0),
+            topTags: [],
+          };
+        } catch {
+          // Skip this agent
+        }
+      }),
+    );
+
+    return results;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -125,6 +192,16 @@ export async function GET(request: Request) {
     const supabaseResult = await getFromSupabase(agentId);
     if (supabaseResult) {
       return NextResponse.json(supabaseResult);
+    }
+  } catch {
+    // Fall through to Ponder
+  }
+
+  // Try Ponder indexer API
+  try {
+    const ponderResult = await getFromPonder(agentId);
+    if (ponderResult) {
+      return NextResponse.json(ponderResult);
     }
   } catch {
     // Fall through to on-chain

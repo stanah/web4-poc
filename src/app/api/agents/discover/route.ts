@@ -138,6 +138,74 @@ async function withConcurrencyLimit<T>(
 }
 
 /**
+ * Try Ponder indexer API as a second data source.
+ * Ponder indexes blockchain events and provides fast access to agent data.
+ */
+async function getAgentsFromPonder(tag?: string, query?: string) {
+  const ponderUrl = process.env.PONDER_API_URL || "http://localhost:42069";
+
+  let res: Response;
+  try {
+    res = await fetch(`${ponderUrl}/api/agents`, {
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch {
+    return null;
+  }
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const ponderAgents = data.agents as {
+    tokenId: number;
+    owner: string;
+    metadataUri: string;
+    timestamp: number;
+  }[];
+
+  if (!ponderAgents || ponderAgents.length === 0) return null;
+
+  // Resolve metadata concurrently from data/https URIs
+  const tasks = ponderAgents.map((pa) => {
+    return async (): Promise<(AgentMetadata & { id: number }) | null> => {
+      const uri = pa.metadataUri;
+      if (!uri) return null;
+
+      let metadata: AgentMetadata | null = null;
+      if (uri.startsWith("data:")) {
+        metadata = parseDataUri(uri);
+      } else if (uri.startsWith("https://")) {
+        metadata = await safeFetchMetadata(uri);
+      }
+      // Skip ipfs:// and other protocols for now
+
+      if (!metadata) return null;
+      return { ...metadata, id: pa.tokenId };
+    };
+  });
+
+  const results = await withConcurrencyLimit(tasks, MAX_CONCURRENT_RPC);
+  let agents = results.filter(
+    (a): a is AgentMetadata & { id: number } => a !== null,
+  );
+
+  if (tag) {
+    agents = agents.filter((a) => a.tags?.includes(tag));
+  }
+
+  if (query) {
+    const q = query.toLowerCase();
+    agents = agents.filter(
+      (a) =>
+        a.name?.toLowerCase().includes(q) ||
+        a.description?.toLowerCase().includes(q) ||
+        a.tags?.some((t) => t.includes(q)),
+    );
+  }
+
+  return agents;
+}
+
+/**
  * Fallback: read agents directly from on-chain contracts.
  */
 async function getAgentsFromChain(tag?: string, query?: string) {
@@ -213,7 +281,7 @@ export async function GET(request: Request) {
   try {
     // Try Supabase first (fast indexed queries)
     const supabaseAgents = await getAgentsFromSupabase(tag, query);
-    if (supabaseAgents) {
+    if (supabaseAgents && supabaseAgents.length > 0) {
       return NextResponse.json({
         agents: supabaseAgents,
         total: supabaseAgents.length,
@@ -221,11 +289,25 @@ export async function GET(request: Request) {
       });
     }
   } catch (err) {
-    console.error("[discover] Supabase query failed, falling back to on-chain:", err);
+    console.error("[discover] Supabase query failed, falling back:", err);
   }
 
   try {
-    // Fallback to on-chain reads
+    // Try Ponder indexer API (has indexed blockchain events)
+    const ponderAgents = await getAgentsFromPonder(tag, query);
+    if (ponderAgents && ponderAgents.length > 0) {
+      return NextResponse.json({
+        agents: ponderAgents,
+        total: ponderAgents.length,
+        source: "ponder",
+      });
+    }
+  } catch (err) {
+    console.error("[discover] Ponder query failed, falling back to on-chain:", err);
+  }
+
+  try {
+    // Last resort: direct on-chain reads (requires totalSupply)
     const agents = await getAgentsFromChain(tag, query);
     return NextResponse.json({
       agents,

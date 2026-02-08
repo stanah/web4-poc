@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AgentGrid } from "@/components/agents/agent-grid";
-import { useAgentsList } from "@/lib/contracts/hooks/use-agents-list";
+import { useAgentsDiscover } from "@/lib/hooks/use-agents-discover";
 import { useTranslations } from "next-intl";
 import { useTagLabel } from "@/lib/i18n/tag-utils";
 
@@ -14,11 +14,9 @@ const ALL_TAGS = ["all", "oracle", "defi", "nlp", "translation", "analytics", "r
 export default function MarketplacePage() {
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState("all");
-  const { agents: onChainAgents, isLoading } = useAgentsList();
+  const { agents, isLoading } = useAgentsDiscover();
   const t = useTranslations("Marketplace");
   const getTagLabel = useTagLabel();
-
-  const agents = onChainAgents;
 
   const filtered = agents.filter((agent) => {
     const matchesSearch =

@@ -7,7 +7,9 @@ import { CONTRACT_ADDRESSES } from "./addresses";
 import { tagToBytes32 } from "@/lib/erc8004/types";
 
 const rpcUrl =
-  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || "https://rpc.sepolia.org";
+  process.env.SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ||
+  "https://rpc.sepolia.org";
 
 function getSystemAccount() {
   const key = process.env.SYSTEM_SIGNER_PRIVATE_KEY;
