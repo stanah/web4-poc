@@ -1,11 +1,13 @@
-import { Hono } from "hono";
 import { db } from "ponder:api";
 import { agent, feedbackEntry, validation } from "ponder:schema";
 import { desc, eq, sql } from "ponder";
+import { Hono } from "hono";
 
 /**
- * Ponder REST API endpoints for ERC-8004 indexed data.
+ * Custom REST API endpoints for querying indexed ERC-8004 data.
+ * Ponder's GraphQL API is auto-generated; these provide additional query patterns.
  */
+
 const app = new Hono();
 
 // GET /api/agents - List all indexed agents

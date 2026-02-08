@@ -74,21 +74,21 @@ export async function createTransactionIntent(
 
 /**
  * Create or retrieve a player (smart account) for a wallet address.
+ * Uses the wallet address as the player name for lookup.
  */
 export async function getOrCreatePlayer(
   walletAddress: string,
-  name?: string,
 ): Promise<{ id: string; smartAccountAddress: string }> {
-  // Search for existing player by external wallet
+  // Search for existing player by name (wallet address)
   const searchRes = await fetch(
-    `${OPENFORT_API_BASE}/v1/players?external_wallet=${encodeURIComponent(walletAddress)}`,
+    `${OPENFORT_API_BASE}/v1/players?name=${encodeURIComponent(walletAddress)}`,
     { headers: getHeaders(), signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
   );
 
   if (!searchRes.ok) {
-    // Don't silently fall through to player creation on search API errors
-    // (e.g. auth failure, server error) — this could create duplicate players
-    throw new Error(`Openfort search API error: ${searchRes.status}`);
+    const errorBody = await searchRes.text();
+    console.error(`[openfort] Player search failed: ${searchRes.status}`, errorBody);
+    throw new Error(`Openfort search API error: ${searchRes.status} ${errorBody}`);
   }
 
   const searchData = await searchRes.json();
@@ -100,14 +100,13 @@ export async function getOrCreatePlayer(
     };
   }
 
-  // Create new player
+  // Create new player with wallet address as name
   const createRes = await fetch(`${OPENFORT_API_BASE}/v1/players`, {
     method: "POST",
     headers: getHeaders(),
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     body: JSON.stringify({
-      name: name ?? `web4-${walletAddress.slice(0, 8)}`,
-      external_wallet: walletAddress,
+      name: walletAddress,
     }),
   });
 

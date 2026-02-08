@@ -1,5 +1,4 @@
 import { createConfig } from "ponder";
-import type { Abi } from "viem";
 
 import IdentityRegistryAbi from "./abis/IdentityRegistry.json";
 import ReputationRegistryAbi from "./abis/ReputationRegistry.json";
@@ -22,22 +21,22 @@ export default createConfig({
   },
   contracts: {
     IdentityRegistry: {
+      abi: IdentityRegistryAbi,
       chain: "sepolia",
-      abi: IdentityRegistryAbi as Abi,
       address: "0x8004A818BFB912233c491871b3d84c89A494BD9e",
-      startBlock: 7_000_000,
+      startBlock: 9_989_393,
     },
     ReputationRegistry: {
+      abi: ReputationRegistryAbi,
       chain: "sepolia",
-      abi: ReputationRegistryAbi as Abi,
       address: "0x8004B663056A597Dffe9eCcC1965A193B7388713",
-      startBlock: 7_000_000,
+      startBlock: 9_989_394,
     },
     ValidationRegistry: {
+      abi: ValidationRegistryAbi,
       chain: "sepolia",
-      abi: ValidationRegistryAbi as Abi,
       address: "0x8004Cb1BF31DAf7788923b405b754f57acEB4272",
-      startBlock: 7_000_000,
+      startBlock: 9_989_395,
     },
   },
 });

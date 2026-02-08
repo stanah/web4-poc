@@ -13,6 +13,9 @@ node_modules
 # testing
 /coverage
 
+# ponder
+.ponder/
+
 # next.js
 /.next/
 /out/
