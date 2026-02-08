@@ -4,6 +4,7 @@ export interface AgentMetadata {
   image?: string;
   services: AgentService[];
   tags: string[];
+  supportedTrust?: string[];
   owner?: `0x${string}`;
 }
 
@@ -11,7 +12,8 @@ export interface AgentService {
   type: "MCP" | "A2A";
   name: string;
   description: string;
-  endpoint?: string;
+  endpoint: string;
+  version?: string;
 }
 
 export interface AgentRegistration {

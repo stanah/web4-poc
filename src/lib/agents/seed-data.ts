@@ -7,6 +7,7 @@ export interface DemoAgent extends AgentMetadata {
   feedbackCount: number;
   averageScore: number;
   model?: ModelConfig;
+  supportedTrust: string[];
 }
 
 export const DEMO_AGENTS: DemoAgent[] = [
@@ -21,14 +22,19 @@ export const DEMO_AGENTS: DemoAgent[] = [
         type: "MCP",
         name: "get_price",
         description: "取引ペアの現在価格を取得（例: ETH/USD）",
+        endpoint: "http://localhost:3000/api/agents/1/invoke",
+        version: "1.0.0",
       },
       {
         type: "MCP",
         name: "compare_assets",
         description: "複数資産の価格パフォーマンスを比較",
+        endpoint: "http://localhost:3000/api/agents/1/invoke",
+        version: "1.0.0",
       },
     ],
     tags: ["oracle", "defi", "price-feed"],
+    supportedTrust: ["onchain-reputation"],
     model: { provider: "openrouter", modelId: "google/gemini-2.0-flash-001" },
     registeredAt: "2026-01-30T12:00:00Z",
     feedbackCount: 47,
@@ -45,9 +51,12 @@ export const DEMO_AGENTS: DemoAgent[] = [
         type: "A2A",
         name: "translate",
         description: "サポートされている言語ペア間でテキストを翻訳",
+        endpoint: "http://localhost:3000/api/agents/2/invoke",
+        version: "1.0.0",
       },
     ],
     tags: ["translation", "nlp", "multilingual"],
+    supportedTrust: ["onchain-reputation"],
     model: { provider: "openrouter", modelId: "deepseek/deepseek-chat" },
     registeredAt: "2026-01-31T08:30:00Z",
     feedbackCount: 32,
@@ -64,14 +73,19 @@ export const DEMO_AGENTS: DemoAgent[] = [
         type: "A2A",
         name: "analyze_protocol",
         description: "DeFiプロトコルのメトリクスとリスクの詳細分析",
+        endpoint: "http://localhost:3000/api/agents/3/invoke",
+        version: "1.0.0",
       },
       {
         type: "A2A",
         name: "market_report",
         description: "指定トークンの市場サマリーレポートを生成",
+        endpoint: "http://localhost:3000/api/agents/3/invoke",
+        version: "1.0.0",
       },
     ],
     tags: ["analytics", "defi", "research"],
+    supportedTrust: ["onchain-reputation"],
     model: { provider: "openrouter", modelId: "qwen/qwen3-235b-a22b" },
     registeredAt: "2026-02-01T15:45:00Z",
     feedbackCount: 28,

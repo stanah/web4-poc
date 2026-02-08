@@ -17,7 +17,14 @@ export async function GET(
     name: agent.name,
     description: agent.description,
     image: agent.image,
-    services: agent.services,
+    services: agent.services.map((s) => ({
+      type: s.type,
+      name: s.name,
+      description: s.description,
+      endpoint: s.endpoint,
+      version: s.version,
+    })),
     tags: agent.tags,
+    supportedTrust: agent.supportedTrust,
   });
 }

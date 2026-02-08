@@ -115,11 +115,23 @@ function AgentProfile({ agentId }: { agentId: number }) {
                   className="flex items-start gap-4 p-3 rounded-lg bg-muted/50"
                 >
                   <Badge variant="outline">{service.type}</Badge>
-                  <div>
-                    <p className="font-medium text-sm">{service.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{service.name}</p>
+                      {service.version && (
+                        <Badge variant="secondary" className="text-xs">
+                          v{service.version}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {service.description}
                     </p>
+                    {service.endpoint && (
+                      <p className="text-xs text-muted-foreground font-mono truncate mt-1">
+                        {service.endpoint}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
