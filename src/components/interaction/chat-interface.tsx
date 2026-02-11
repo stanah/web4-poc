@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageBubble } from "./message-bubble";
 import type { AgentMetadata } from "@/lib/erc8004/types";
 import { useTranslations } from "next-intl";
+import { getAgentPersonality } from "@/lib/agents/personality";
 
 interface ChatInterfaceProps {
   agent: AgentMetadata & { id: number };
@@ -20,6 +21,8 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const t = useTranslations("ChatInterface");
+  const tPrompt = useTranslations("ExamplePrompts");
+  const personality = getAgentPersonality(agent.id);
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -49,16 +52,23 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
     }
   };
 
+  const handleSuggestionClick = (promptKey: string) => {
+    const text = tPrompt(promptKey);
+    if (text && !isLoading) {
+      sendMessage({ text });
+    }
+  };
+
   return (
     <Card className="flex flex-col h-[600px]">
       <CardHeader className="border-b pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-lg">
-              {agent.name[0]}
+            <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${personality.bgClass} text-lg`}>
+              {personality.emoji}
             </div>
             <div>
-              <CardTitle className="text-base">{agent.name}</CardTitle>
+              <CardTitle className={`text-base ${personality.colorClass}`}>{agent.name}</CardTitle>
               <p className="text-xs text-muted-foreground">
                 Agent #{agent.id}
               </p>
@@ -78,17 +88,37 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-4">
             {messages.length === 0 && (
-              <MessageBubble
-                role="assistant"
-                agentName={agent.name}
-                content={t("welcome", { name: agent.name, description: agent.description.split("。")[0] || agent.description.split(".")[0] })}
-              />
+              <>
+                <MessageBubble
+                  role="assistant"
+                  agentName={agent.name}
+                  agentEmoji={personality.emoji}
+                  agentColor={personality.colorClass}
+                  content={t("welcome", { name: agent.name, description: agent.description.split("。")[0] || agent.description.split(".")[0] })}
+                />
+                {personality.examplePrompts.length > 0 && (
+                  <div className="flex flex-wrap gap-2 px-2">
+                    {personality.examplePrompts.map((promptKey) => (
+                      <button
+                        key={promptKey}
+                        type="button"
+                        onClick={() => handleSuggestionClick(promptKey)}
+                        className={`rounded-full border px-3 py-1.5 text-xs transition-colors hover:bg-accent ${personality.borderClass} ${personality.colorClass}`}
+                      >
+                        {tPrompt(promptKey)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
             {messages.map((msg) => (
               <MessageBubble
                 key={msg.id}
                 role={msg.role}
                 agentName={msg.role === "assistant" ? agent.name : undefined}
+                agentEmoji={msg.role === "assistant" ? personality.emoji : undefined}
+                agentColor={msg.role === "assistant" ? personality.colorClass : undefined}
                 content={msg.parts
                   .map((part) => (part.type === "text" ? part.text : ""))
                   .join("")}

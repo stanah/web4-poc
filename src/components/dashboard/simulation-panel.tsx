@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SimulationMessage } from "./simulation-message";
 import { SCENARIOS } from "@/lib/ai/scenarios";
+import { DEMO_AGENTS, AGENT_PERSONALITIES } from "@/lib/agents/seed-data";
 import type { SimulationEvent } from "@/lib/ai/simulation-engine";
 import type { ActivityEvent } from "./activity-feed";
 import { useTranslations } from "next-intl";
@@ -18,16 +19,37 @@ interface SimulationPanelProps {
 
 type SimulationStatus = "idle" | "running" | "complete" | "error";
 
+function getParticipants(scenarioIndex: number): { name: string; emoji: string; color: string }[] {
+  const scenario = SCENARIOS[scenarioIndex];
+  if (!scenario) return [];
+  const names = new Set<string>();
+  for (const step of scenario.steps) {
+    names.add(step.from);
+    names.add(step.to);
+  }
+  return Array.from(names).map((name) => {
+    const agent = DEMO_AGENTS.find((a) => a.name === name);
+    const p = agent ? AGENT_PERSONALITIES[agent.id] : undefined;
+    return {
+      name,
+      emoji: p?.emoji ?? "\u{1F916}",
+      color: p?.colorClass ?? "text-primary",
+    };
+  });
+}
+
 export function SimulationPanel({ onActivityEvent }: SimulationPanelProps) {
   const [status, setStatus] = useState<SimulationStatus>("idle");
   const [events, setEvents] = useState<SimulationEvent[]>([]);
   const [streamingContent, setStreamingContent] = useState<Record<number, string>>({});
+  const [scenarioIndex, setScenarioIndex] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const t = useTranslations("SimulationPanel");
   const ts = useTranslations("Scenarios");
 
-  const scenario = SCENARIOS[0];
+  const scenario = SCENARIOS[scenarioIndex];
+  const participants = getParticipants(scenarioIndex);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -130,7 +152,7 @@ export function SimulationPanel({ onActivityEvent }: SimulationPanelProps) {
         from: step.action === "request" ? step.to : step.from,
         to: step.action === "request" ? step.from : step.to,
         action: step.action,
-        content: content + " ▌",
+        content: content + " \u258C",
         timestamp: new Date().toISOString(),
       });
     }
@@ -142,11 +164,28 @@ export function SimulationPanel({ onActivityEvent }: SimulationPanelProps) {
     <Card className="flex flex-col">
       <CardHeader className="border-b">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="space-y-1">
             <CardTitle className="text-lg">{t("title")}</CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              {scenarioTitle}
-            </p>
+            {/* Scenario selector */}
+            <div className="flex gap-1.5">
+              {SCENARIOS.map((s, i) => (
+                <Badge
+                  key={s.id}
+                  variant={scenarioIndex === i ? "default" : "outline"}
+                  className="cursor-pointer text-[10px]"
+                  onClick={() => {
+                    if (status !== "running") {
+                      setScenarioIndex(i);
+                      setEvents([]);
+                      setStreamingContent({});
+                      setStatus("idle");
+                    }
+                  }}
+                >
+                  {ts.has(s.id) ? ts(s.id) : s.title}
+                </Badge>
+              ))}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {status === "running" && (
@@ -175,11 +214,27 @@ export function SimulationPanel({ onActivityEvent }: SimulationPanelProps) {
       <CardContent className="flex-1 p-0">
         <ScrollArea className="h-[500px] p-4" ref={scrollRef}>
           {displayItems.length === 0 && status === "idle" ? (
-            <div className="flex flex-col items-center justify-center h-full py-16 text-center">
-              <p className="text-4xl mb-4">🤖🔄🤖</p>
+            <div className="flex flex-col items-center justify-center h-full py-12 text-center space-y-6">
+              {/* Flow diagram: participating agents */}
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                {participants.map((p, i) => (
+                  <div key={p.name} className="flex items-center gap-1">
+                    {i > 0 && <span className="text-muted-foreground text-lg">\u2192</span>}
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-muted">
+                      <span className="text-lg">{p.emoji}</span>
+                      <span className={`text-xs font-medium ${p.color}`}>{p.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <p className="text-sm text-muted-foreground max-w-sm">
-                {t("idleMessage")}
+                {scenarioTitle}
               </p>
+
+              <Badge variant="outline" className="text-xs">
+                {t("autonomyLabel")}
+              </Badge>
             </div>
           ) : (
             <AnimatePresence mode="popLayout">

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 import { ActivityFeed, type ActivityEvent } from "@/components/dashboard/activity-feed";
 import { EconomyStats } from "@/components/dashboard/economy-stats";
 import { SimulationPanel } from "@/components/dashboard/simulation-panel";
@@ -21,7 +22,12 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <div className="flex items-center gap-3 mb-1">
+          <h1 className="text-3xl font-bold">{t("title")}</h1>
+          <Badge variant="secondary" className="text-xs">
+            {t("autonomyBadge")}
+          </Badge>
+        </div>
         <p className="text-muted-foreground mt-1">
           {t("description")}
         </p>

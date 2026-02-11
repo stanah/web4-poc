@@ -1,14 +1,8 @@
 import { SCENARIOS } from "@/lib/ai/scenarios";
-import { runSimulation, type SimulationEvent } from "@/lib/ai/simulation-engine";
+import { runSimulation, AGENT_IDS, type SimulationEvent } from "@/lib/ai/simulation-engine";
 import { writeFeedbackOnChain, writeValidationOnChain } from "@/lib/contracts/server-client";
 
 export const maxDuration = 60;
-
-const AGENT_IDS: Record<string, number> = {
-  OracleBot: 1,
-  TranslateAgent: 2,
-  AnalystAgent: 3,
-};
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

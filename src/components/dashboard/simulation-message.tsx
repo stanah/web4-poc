@@ -5,12 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { SimulationEvent } from "@/lib/ai/simulation-engine";
 import { useTranslations } from "next-intl";
 import { useTagLabel } from "@/lib/i18n/tag-utils";
-
-const AGENT_COLORS: Record<string, string> = {
-  OracleBot: "text-amber-500",
-  TranslateAgent: "text-blue-500",
-  AnalystAgent: "text-emerald-500",
-};
+import { getAgentColor, getAgentEmoji } from "@/lib/agents/personality";
 
 const ACTION_BG: Record<string, string> = {
   request: "bg-blue-500/10 border-blue-500/20",
@@ -39,12 +34,12 @@ export function SimulationMessage({ event }: SimulationMessageProps) {
         <span className="text-lg">💰</span>
         <div className="flex-1">
           <div className="flex items-center gap-2 text-sm">
-            <span className={`font-semibold ${AGENT_COLORS[event.from] || ""}`}>
-              {event.from}
+            <span className={`font-semibold ${getAgentColor(event.from)}`}>
+              {getAgentEmoji(event.from)} {event.from}
             </span>
             <span className="text-muted-foreground">→</span>
-            <span className={`font-semibold ${AGENT_COLORS[event.to] || ""}`}>
-              {event.to}
+            <span className={`font-semibold ${getAgentColor(event.to)}`}>
+              {getAgentEmoji(event.to)} {event.to}
             </span>
             <Badge variant="outline" className="text-[10px] text-yellow-600 border-yellow-600/30">
               {event.feedbackScore}/5 ⭐
@@ -82,12 +77,12 @@ export function SimulationMessage({ event }: SimulationMessageProps) {
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="flex items-center gap-1 text-sm">
-          <span className={`font-semibold ${AGENT_COLORS[event.from] || ""}`}>
-            {event.from}
+          <span className={`font-semibold ${getAgentColor(event.from)}`}>
+            {getAgentEmoji(event.from)} {event.from}
           </span>
           <span className="text-muted-foreground">→</span>
-          <span className={`font-semibold ${AGENT_COLORS[event.to] || ""}`}>
-            {event.to}
+          <span className={`font-semibold ${getAgentColor(event.to)}`}>
+            {getAgentEmoji(event.to)} {event.to}
           </span>
         </div>
         <Badge variant="outline" className="text-[10px]">
