@@ -50,3 +50,9 @@ next-env.d.ts
 
 
 .playwright-mcp/
+
+# test screenshots
+*-check.png
+*-verify.png
+*-after-wait.png
+*-loaded-verify.png
