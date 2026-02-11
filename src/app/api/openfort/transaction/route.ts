@@ -28,6 +28,10 @@ const ALLOWED_FUNCTIONS: Record<string, string[]> = Object.fromEntries(
  *   policyId?: string,
  *   interactions: [{ contract, functionName, functionArgs }]
  * }
+ *
+ * Security: Origin header + contract/function allowlists provide defense-in-depth.
+ * TODO(production): Add wallet signature verification to prove playerId ownership
+ * and per-account rate limiting before deploying outside PoC.
  */
 export async function POST(request: Request) {
   try {

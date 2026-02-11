@@ -8,6 +8,10 @@ import { getOrCreatePlayer } from "@/lib/openfort/server";
  * Create or retrieve an Openfort player (smart account) for a wallet address.
  * Protected by Origin header verification to ensure requests come from our frontend.
  * Body: { walletAddress: string }
+ *
+ * Security: Origin header verification provides CSRF protection.
+ * TODO(production): Add wallet signature verification (EIP-191/EIP-712)
+ * and per-IP rate limiting before deploying outside PoC.
  */
 export async function POST(request: Request) {
   try {
