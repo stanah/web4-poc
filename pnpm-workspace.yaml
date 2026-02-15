@@ -1,3 +1,7 @@
+packages:
+  - "."
+  - "ponder"
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver

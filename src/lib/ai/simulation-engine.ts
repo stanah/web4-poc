@@ -1,14 +1,12 @@
 import { streamText } from "ai";
 import { getModel } from "./provider";
 import { AGENT_PROMPTS } from "./agent-prompts";
-import { getAgentById } from "@/lib/agents/seed-data";
+import { DEMO_AGENTS, getAgentById } from "@/lib/agents/seed-data";
 import type { Scenario, ScenarioStep } from "./scenarios";
 
-const AGENT_IDS: Record<string, number> = {
-  OracleBot: 1,
-  TranslateAgent: 2,
-  AnalystAgent: 3,
-};
+const AGENT_IDS: Record<string, number> = Object.fromEntries(
+  DEMO_AGENTS.map((a) => [a.name, a.id]),
+);
 
 export type SimulationEventType =
   | "step-start"
@@ -152,3 +150,5 @@ export async function* runSimulation(
     timestamp: new Date().toISOString(),
   };
 }
+
+export { AGENT_IDS };

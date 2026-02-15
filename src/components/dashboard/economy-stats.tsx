@@ -1,57 +1,87 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useTotalAgents } from "@/lib/contracts/hooks/use-identity";
-import { useReputationSummary } from "@/lib/contracts/hooks/use-reputation";
-import { useAgentsList } from "@/lib/contracts/hooks/use-agents-list";
 import { useTranslations } from "next-intl";
 
+interface AgentSummary {
+  totalFeedback: number;
+  averageScore: number;
+  topTags: string[];
+}
+
 function useEconomyData() {
-  const { data: totalSupply } = useTotalAgents();
-  const { agents: agentsList } = useAgentsList();
-  const { data: summary1 } = useReputationSummary(1, { refetchInterval: 15_000 });
-  const { data: summary2 } = useReputationSummary(2, { refetchInterval: 15_000 });
-  const { data: summary3 } = useReputationSummary(3, { refetchInterval: 15_000 });
+  const [totalAgents, setTotalAgents] = useState(0);
+  const [totalFeedback, setTotalFeedback] = useState(0);
+  const [avgRating, setAvgRating] = useState(0);
+  const [rankings, setRankings] = useState<
+    { name: string; score: number; feedbacks: number; percentage: number }[]
+  >([]);
 
-  const onChainTotal = totalSupply ? Number(totalSupply) : 0;
+  useEffect(() => {
+    let cancelled = false;
 
-  const summaries = [summary1, summary2, summary3]
-    .filter(Boolean)
-    .map((s, i) => {
-      const sum = s as { totalFeedback: bigint; averageValue: bigint; averageDecimals: number };
-      return {
-        agentId: i + 1,
-        totalFeedback: Number(sum.totalFeedback),
-        averageScore: Number(sum.averageValue) / Math.pow(10, sum.averageDecimals),
-      };
-    });
+    async function fetchData() {
+      try {
+        const [discoverRes, aggregateRes] = await Promise.all([
+          fetch("/api/agents/discover"),
+          fetch("/api/feedback/aggregate"),
+        ]);
 
-  const totalFeedback = summaries.reduce((acc, s) => acc + s.totalFeedback, 0);
-  const avgRating = summaries.length > 0
-    ? summaries.reduce((acc, s) => acc + s.averageScore, 0) / summaries.length
-    : 0;
+        if (cancelled) return;
 
-  const rankings = summaries
-    .map((s) => {
-      const agent = agentsList.find((a) => a.id === s.agentId);
-      return {
-        name: agent?.name ?? `Agent #${s.agentId}`,
-        score: s.averageScore,
-        feedbacks: s.totalFeedback,
-        percentage: Math.round((s.averageScore / 5) * 100),
-      };
-    })
-    .filter((r) => r.feedbacks > 0)
-    .sort((a, b) => b.score - a.score);
+        // Parse discover response for total agents count + names
+        let agentNames: Record<number, string> = {};
+        if (discoverRes.ok) {
+          const discover = await discoverRes.json();
+          setTotalAgents(discover.total ?? 0);
+          for (const a of discover.agents ?? []) {
+            agentNames[a.id] = a.name;
+          }
+        }
 
-  return {
-    totalAgents: onChainTotal,
-    totalFeedback,
-    avgRating,
-    rankings,
-  };
+        // Parse aggregate response for reputation data
+        if (aggregateRes.ok) {
+          const aggregate: Record<string, AgentSummary> = await aggregateRes.json();
+
+          const entries = Object.entries(aggregate)
+            .map(([id, summary]) => ({
+              agentId: Number(id),
+              ...summary,
+            }));
+
+          const totalFb = entries.reduce((acc, s) => acc + s.totalFeedback, 0);
+          const avg = entries.length > 0
+            ? entries.reduce((acc, s) => acc + s.averageScore, 0) / entries.length
+            : 0;
+
+          setTotalFeedback(totalFb);
+          setAvgRating(avg);
+
+          const ranked = entries
+            .map((s) => ({
+              name: agentNames[s.agentId] ?? `Agent #${s.agentId}`,
+              score: s.averageScore,
+              feedbacks: s.totalFeedback,
+              percentage: Math.round((s.averageScore / 5) * 100),
+            }))
+            .filter((r) => r.feedbacks > 0)
+            .sort((a, b) => b.score - a.score);
+
+          setRankings(ranked);
+        }
+      } catch {
+        // Silently fail — dashboard shows zeros
+      }
+    }
+
+    fetchData();
+    return () => { cancelled = true; };
+  }, []);
+
+  return { totalAgents, totalFeedback, avgRating, rankings };
 }
 
 export function EconomyStats() {

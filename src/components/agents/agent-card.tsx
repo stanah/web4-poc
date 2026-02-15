@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { OnChainAgent } from "@/lib/contracts/hooks/use-agents-list";
 import { useTranslations } from "next-intl";
 import { useTagLabel } from "@/lib/i18n/tag-utils";
+import { getAgentPersonality, getCategoryLabel } from "@/lib/agents/personality";
 
 interface AgentCardProps {
   agent: OnChainAgent;
@@ -38,7 +39,10 @@ function StarRating({ score }: { score: number }) {
 
 export function AgentCard({ agent, index = 0 }: AgentCardProps) {
   const t = useTranslations("Common");
+  const tCat = useTranslations("AgentCategory");
+  const tTag = useTranslations("AgentTagline");
   const getTagLabel = useTagLabel();
+  const personality = getAgentPersonality(agent.id);
 
   return (
     <motion.div
@@ -50,25 +54,38 @@ export function AgentCard({ agent, index = 0 }: AgentCardProps) {
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-lg">
-                {agent.name[0]}
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${personality.bgClass} text-lg`}>
+                {personality.emoji}
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">{agent.name}</h3>
+                <h3 className={`font-semibold ${personality.colorClass}`}>{agent.name}</h3>
                 <p className="text-xs text-muted-foreground">
                   Agent #{agent.id}
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="text-xs">
-              {agent.services[0]?.type}
-            </Badge>
+            <div className="flex flex-col items-end gap-1">
+              <Badge variant="outline" className="text-xs">
+                {agent.services[0]?.type}
+              </Badge>
+              <Badge className={`text-[10px] ${personality.bgClass} ${personality.colorClass} border-0`}>
+                {tCat.has(personality.category) ? tCat(personality.category) : personality.category}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground line-clamp-2">
             {agent.description}
           </p>
+
+          {personality.tagline && (
+            <p className={`text-xs italic ${personality.colorClass}`}>
+              {tTag.has(personality.tagline.replace("agentTagline.", ""))
+                ? tTag(personality.tagline.replace("agentTagline.", "") as "oracleBot")
+                : ""}
+            </p>
+          )}
 
           <div className="flex flex-wrap gap-1.5">
             {agent.tags.map((tag) => (

@@ -4,6 +4,7 @@ import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { config } from "@/lib/wagmi";
+import { OpenfortProvider } from "./openfort-provider";
 
 import "@rainbow-me/rainbowkit/styles.css";
 
@@ -19,7 +20,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
             borderRadius: "medium",
           })}
         >
-          {children}
+          <OpenfortProvider>{children}</OpenfortProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

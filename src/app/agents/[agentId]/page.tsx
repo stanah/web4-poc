@@ -16,6 +16,7 @@ import { useAgentTokenURI } from "@/lib/contracts/hooks/use-identity";
 import { useValidations, type Validation } from "@/lib/contracts/hooks/use-validation";
 import { useTranslations } from "next-intl";
 import { useTagLabel } from "@/lib/i18n/tag-utils";
+import { getAgentPersonality } from "@/lib/agents/personality";
 
 function AgentProfile({ agentId }: { agentId: number }) {
   const { metadata: agent, isLoading: isLoadingAgent } = useAgentMetadata(agentId);
@@ -25,7 +26,9 @@ function AgentProfile({ agentId }: { agentId: number }) {
   const validations = (validationsData as Validation[] | undefined) || [];
   const t = useTranslations("AgentProfile");
   const tc = useTranslations("Common");
+  const tTag = useTranslations("AgentTagline");
   const getTagLabel = useTagLabel();
+  const personality = getAgentPersonality(agentId);
 
   const onChainScore = summary
     ? Number((summary as { averageValue: bigint }).averageValue) /
@@ -68,15 +71,22 @@ function AgentProfile({ agentId }: { agentId: number }) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-3xl">
-          {agent.name[0]}
+        <div className={`flex h-16 w-16 items-center justify-center rounded-xl ${personality.bgClass} font-bold text-3xl`}>
+          {personality.emoji}
         </div>
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">{agent.name}</h1>
+            <h1 className={`text-3xl font-bold ${personality.colorClass}`}>{agent.name}</h1>
             <ReputationBadge score={onChainScore} />
           </div>
           <p className="text-muted-foreground">{agent.description}</p>
+          {personality.tagline && (
+            <p className={`text-sm italic ${personality.colorClass}`}>
+              {tTag.has(personality.tagline.replace("agentTagline.", ""))
+                ? tTag(personality.tagline.replace("agentTagline.", "") as "oracleBot")
+                : ""}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2 mt-2">
             {agent.tags.map((tag) => (
               <Badge key={tag} variant="secondary">
@@ -115,11 +125,23 @@ function AgentProfile({ agentId }: { agentId: number }) {
                   className="flex items-start gap-4 p-3 rounded-lg bg-muted/50"
                 >
                   <Badge variant="outline">{service.type}</Badge>
-                  <div>
-                    <p className="font-medium text-sm">{service.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{service.name}</p>
+                      {service.version && (
+                        <Badge variant="secondary" className="text-xs">
+                          v{service.version}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {service.description}
                     </p>
+                    {service.endpoint && (
+                      <p className="text-xs text-muted-foreground font-mono truncate mt-1">
+                        {service.endpoint}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}

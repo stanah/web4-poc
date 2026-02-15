@@ -6,9 +6,11 @@ interface MessageBubbleProps {
   role: string;
   content: string;
   agentName?: string;
+  agentEmoji?: string;
+  agentColor?: string;
 }
 
-export function MessageBubble({ role, content, agentName }: MessageBubbleProps) {
+export function MessageBubble({ role, content, agentName, agentEmoji, agentColor }: MessageBubbleProps) {
   const isUser = role === "user";
 
   return (
@@ -27,7 +29,8 @@ export function MessageBubble({ role, content, agentName }: MessageBubbleProps) 
       >
         {!isUser && agentName && (
           <div className="mb-1">
-            <span className="text-xs font-medium text-primary">
+            <span className={`text-xs font-medium ${agentColor || "text-primary"}`}>
+              {agentEmoji && <span className="mr-1">{agentEmoji}</span>}
               {agentName}
             </span>
           </div>

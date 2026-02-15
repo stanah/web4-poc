@@ -48,7 +48,25 @@ export function RegistrationForm() {
     e.preventDefault();
     if (!name || !description) return;
 
-    const metadataUri = `${window.location.origin}/api/agents/new/metadata`;
+    const metadata = {
+      name,
+      description,
+      services: [
+        {
+          type: serviceType,
+          name: name.toLowerCase().replace(/\s+/g, "_"),
+          description,
+          endpoint: "",
+          version: "1.0.0",
+        },
+      ],
+      tags: selectedTags,
+      supportedTrust: ["onchain-reputation"],
+    };
+
+    const json = JSON.stringify(metadata);
+    const base64 = btoa(unescape(encodeURIComponent(json)));
+    const metadataUri = `data:application/json;base64,${base64}`;
     register(metadataUri);
   };
 

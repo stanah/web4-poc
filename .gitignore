@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+
+# ponder
+.ponder/
 
 # next.js
 /.next/
@@ -47,3 +50,9 @@ next-env.d.ts
 
 
 .playwright-mcp/
+
+# test screenshots
+*-check.png
+*-verify.png
+*-after-wait.png
+*-loaded-verify.png
